@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache' // 💡 මෙන්න මේ පේළිය උඩින්ම දාන්න
 import { createAdminClient } from '@/lib/supabase/admin'
 
 // Unique Student ID එකක් Generate කරන ෆන්ක්ෂන් එක
