@@ -1,7 +1,7 @@
 // src/app/dashboard/page.tsx
 import { redirect } from 'next/navigation'
-import { createClient } from '@/utils/supabase/server'
-import { createAdminClient } from '@/utils/supabase/admin' // 💡 Admin Client එක ගන්නවා
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin' // 💡 Admin Client එක ගන්නවා
 import StudentDashboardUI from './StudentDashboardUI'
 
 export const dynamic = 'force-dynamic'
