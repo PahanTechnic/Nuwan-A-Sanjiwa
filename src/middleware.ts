@@ -24,23 +24,30 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  // ✅ Logged out users trying to access protected routes
+  // 1. ලොග් නොවී protected routes වලට යන්න හැදුවොත් login වෙත හරවන්න
   if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/teacher'))) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // ✅ Logged in users trying to access login or landing page
-  if (user && (pathname === '/login' || pathname === '/')) {
-    const destination = user.email === process.env.TEACHER_EMAIL ? '/teacher' : '/dashboard'
-    // ✅ වැදගත්: එකම URL එකට redirect නොකරන්න
-    if (pathname !== destination) {
-      return NextResponse.redirect(new URL(destination, request.url))
-    }
-  }
+  // 2. ලොග් වෙලා ඉන්න අයව නිවැරදි dashboard වෙත හරවන්න
+  if (user) {
+    const isTeacher = user.email === process.env.TEACHER_EMAIL
+    const correctPath = isTeacher ? '/teacher' : '/dashboard'
 
-  // ✅ Teacher එක /teacher නොවන වෙනත් protected route එකකට ගියොත්
-  if (user && pathname.startsWith('/teacher') && user.email !== process.env.TEACHER_EMAIL) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    // ලොග්වීමේ හෝ මුල් පිටුවේ ඉන්නවා නම් නිවැරදි තැනට යන්න
+    if (pathname === '/login' || pathname === '/') {
+      return NextResponse.redirect(new URL(correctPath, request.url))
+    }
+
+    // ගුරුවරයෙක් dashboard එකට යන්න ගියොත් teacher panel එකට හරවන්න
+    if (isTeacher && pathname.startsWith('/dashboard')) {
+      return NextResponse.redirect(new URL('/teacher', request.url))
+    }
+
+    // ශිෂ්‍යයෙක් teacher panel එකට යන්න ගියොත් dashboard එකට හරවන්න
+    if (!isTeacher && pathname.startsWith('/teacher')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
 
   return response
