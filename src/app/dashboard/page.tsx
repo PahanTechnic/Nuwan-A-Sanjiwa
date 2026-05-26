@@ -1,6 +1,6 @@
 // src/app/dashboard/page.tsx
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server' // Regular client vapra
+import { createClient } from '@/lib/supabase/server'
 import StudentDashboardUI from './StudentDashboardUI'
 
 export const dynamic = 'force-dynamic'
@@ -8,14 +8,14 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardPage() {
   const supabase = await createClient()
   
-  // 1. Logged in user auth madhun ghyava
+  // 1. ලොග් වෙලා ඉන්න යූසර්ව Auth එකෙන් ගන්නවා
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
     redirect('/login')
   }
 
-  // 2. Regular client vapra - RLS automatically apply hoil
+  // 2. Regular client පාවිච්චි කරනවා (RLS Policies ඔටෝමැටිකව ඇප්ලයි වෙනවා)
   const { data: student, error: studentError } = await supabase
     .from('students')
     .select('*')
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
     )
   }
 
-  // 3. Shishyache marks ani papers RLS chya madatine secure paddhatine ghyava
+  // 3. ශිෂ්‍යයාගේ ලකුණු (Marks) සහ පේපර්ස් විස්තර ගන්නවා
   const { data: marksData, error: marksError } = await supabase
     .from('marks')
     .select(`
@@ -47,13 +47,12 @@ export default async function DashboardPage() {
     console.error('Marks fetch error:', marksError)
   }
 
-  // UI sathi data pass kara
+  // 💡 `chartData={[]}` ඉවත් කර ඇත. දැන් මෙතන කිසිම ටයිප් ප්‍රශ්නයක් එන්නේ නැහැ.
   return (
     <StudentDashboardUI 
       studentName={student.name}
       studentId={student.student_id} 
       marks={marksData || []} 
-      chartData={[]} // Ithe tumcha chartData logic add kara
     />
   )
 }
