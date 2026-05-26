@@ -8,8 +8,8 @@ export async function approveStudent(id: string, studentId: string, bookNumber: 
   const email = `${studentId.toLowerCase()}@system.com`
 
   try {
-    // 1. Supabase Auth එකේ නිල වශයෙන් Account එකක් හදනවා
-    const { error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // 1. Supabase Auth එකේ Account හදනවා
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: bookNumber.trim(),
       email_confirm: true
@@ -17,13 +17,21 @@ export async function approveStudent(id: string, studentId: string, bookNumber: 
 
     if (authError) throw authError
 
-    // 2. 'students' ටේබල් එකේ approved ස්ටේටස් එක true කරනවා
+    // 2. students table ල id ත් Auth UUID එකට update කරනවා + approved = true
+    // ✅ id column update - මේක නැතිව dashboard ල .eq('id', user.id) fail වෙනවා
     const { error: dbError } = await supabaseAdmin
       .from('students')
-      .update({ approved: true })
+      .update({ 
+        approved: true,
+        id: authData.user.id // ✅ Auth UUID එක students table id ට දානවා
+      })
       .eq('id', id)
 
-    if (dbError) throw dbError
+    if (dbError) {
+      // DB error නම් Auth user delete කරනවා (rollback)
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      throw dbError
+    }
 
     revalidatePath('/teacher')
     return { success: true }
