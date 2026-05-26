@@ -51,11 +51,11 @@ export default async function DashboardPage() {
     console.error('Marks fetch error:', marksError)
   }
 
-  // UI එකට දත්ත ටික ආරක්ෂිතව පාස් කරනවා
+  // 💡 UI එකට දත්ත ටික ආරක්ෂිතව පාස් කරනවා (වැරදුනු තැන නිවැරදි කර ඇත)
   return (
-    StudentDashboardUI 
-    studentId={student.student_id} // 💡 student={student} වෙනුවට මේක දාන්න
-    marks={marksData || []} 
-  />
+    <StudentDashboardUI 
+      studentId={student.student_id} 
+      marks={marksData || []} 
+    />
   )
 }
