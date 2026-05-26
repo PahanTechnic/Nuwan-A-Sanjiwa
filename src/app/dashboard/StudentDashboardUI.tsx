@@ -7,12 +7,45 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 interface DashboardUIProps {
   studentName: string
   studentId: string
-  chartData: any[]
-marks: any[]; // 💡 මේ පේලිය අලුතින් එකතු කරන්න
+  marks: any[]
 }
 
-export default function StudentDashboardUI({ studentName, studentId, chartData,marks }: DashboardUIProps) {
+export default function StudentDashboardUI({ studentName, studentId, marks }: DashboardUIProps) {
   
+  // 💡 ඩේටාබේස් එකෙන් එන ලකුණු ටික ප්‍රස්ථාර වලට ගැලපෙන විදිහට මෙතනින් සකස් කරගන්නවා
+  const chartData = (marks || []).map((m: any) => {
+    const mcq = Number(m.mcq_score) || 0
+    const seq_q1 = Number(m.seq_q1) || 0
+    const seq_q2 = Number(m.seq_q2) || 0
+    const seq_q3 = Number(m.seq_q3) || 0
+    const seq_q4 = Number(m.seq_q4) || 0
+    const ess_q1 = Number(m.ess_q1) || 0
+    const ess_q2 = Number(m.ess_q2) || 0
+    const ess_q3 = Number(m.ess_q3) || 0
+    const ess_q4 = Number(m.ess_q4) || 0
+
+    // ව්‍යුහගත සහ රචනා ප්‍රශ්නවල එකතුව ගන්නවා
+    const structured = seq_q1 + seq_q2 + seq_q3 + seq_q4
+    const essay = ess_q1 + ess_q2 + ess_q3 + ess_q4
+    const total = mcq + structured + essay
+
+    return {
+      name: m.papers?.paper_name || 'පේපරය',
+      mcq,
+      structured,
+      essay,
+      seq_q1,
+      seq_q2,
+      seq_q3,
+      seq_q4,
+      ess_q1,
+      ess_q2,
+      ess_q3,
+      ess_q4,
+      total
+    }
+  })
+
   // අන්තිමටම ලියපු පේපර් එකේ ලකුණු (Latest Score)
   const latestResult = chartData[chartData.length - 1] || {}
 
@@ -29,7 +62,7 @@ export default function StudentDashboardUI({ studentName, studentId, chartData,m
         </div>
       </div>
 
-      {/* 📊 Main Progress Chart (ඔයා ඇඳපු රේඛීය ප්‍රස්ථාරය) */}
+      {/* 📊 Main Progress Chart */}
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>මුළු ලකුණු මට්ටමේ වෙනස්වීම (Overall Progress Trend)</CardTitle>
@@ -43,7 +76,7 @@ export default function StudentDashboardUI({ studentName, studentId, chartData,m
                 <XAxis dataKey="name" stroke="#888888" fontSize={12} />
                 <YAxis stroke="#888888" fontSize={12} domain={[0, 100]} />
                 <Tooltip />
-                <Line type="monotone" dataKey="total" stroke="#2563eb" strokeWidth={3} activeDot={{ r: 8 }} name="ముළු ලකුණු" />
+                <Line type="monotone" dataKey="total" stroke="#2563eb" strokeWidth={3} activeDot={{ r: 8 }} name="මුළු ලකුණු" />
               </LineChart>
             </ResponsiveContainer>
           ) : (
@@ -52,7 +85,7 @@ export default function StudentDashboardUI({ studentName, studentId, chartData,m
         </CardContent>
       </Card>
 
-      {/* 🔍 Section Breakdown Tabs (MCQ, Structured, Essay වෙන වෙනම) */}
+      {/* 🔍 Section Breakdown Tabs */}
       <Tabs defaultValue="sections" className="w-full">
         <TabsList className="grid w-full grid-cols-3 max-w-md">
           <TabsTrigger value="sections">ප්‍රධාන කොටස්</TabsTrigger>
@@ -102,7 +135,7 @@ export default function StudentDashboardUI({ studentName, studentId, chartData,m
                   <Bar dataKey="seq_q1" fill="#3b82f6" name="Q1 ලකුණු" />
                   <Bar dataKey="seq_q2" fill="#6366f1" name="Q2 ලකුණු" />
                   <Bar dataKey="seq_q3" fill="#a855f7" name="Q3 ලකුණු" />
-                  <Bar dataKey="seq_q4" fill="#ec4899" name="Q4 ලකුණු" />
+                  <Bar dataKey="seq_q4" fill="#ec4899" name="Q4 luකණු" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

@@ -1,7 +1,7 @@
 // src/app/dashboard/page.tsx
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin' // 💡 Admin Client එක ගන්නවා
+import { createAdminClient } from '@/lib/supabase/admin'
 import StudentDashboardUI from './StudentDashboardUI'
 
 export const dynamic = 'force-dynamic'
@@ -16,10 +16,10 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  // 💡 විසඳුම: RLS Policies සේරම බයිපාස් කරන්න Admin Client එක හදාගන්නවා
+  // RLS Policies බයිපාස් කරන්න Admin Client එක ගන්නවා
   const supabaseAdmin = createAdminClient()
 
-  // 2. ලොග් වුනු යූසර්ගේ ID එකට ගැලපෙන ශිෂ්‍යයාව 'students' ටේබල් එකෙන් ගන්නවා
+  // 2. ශිෂ්‍යයාගේ විස්තර 'students' ටේබල් එකෙන් ගන්නවා
   const { data: student, error: studentError } = await supabaseAdmin
     .from('students')
     .select('*')
@@ -35,7 +35,7 @@ export default async function DashboardPage() {
     )
   }
 
-  // 3. ශිෂ්‍යයාගේ ලකුණු (Marks) සහ ඒවට අදාල පේපර්ස් (Papers) විස්තර Foreign Key හරහා එකපාර ඇදලා ගන්නවා
+  // 3. ශිෂ්‍යයාගේ ලකුණු (Marks) සහ ඒවට අදාල පේපර්ස් (Papers) විස්තර ගන්නවා
   const { data: marksData, error: marksError } = await supabaseAdmin
     .from('marks')
     .select(`
@@ -51,9 +51,10 @@ export default async function DashboardPage() {
     console.error('Marks fetch error:', marksError)
   }
 
-  // 💡 UI එකට දත්ත ටික ආරක්ෂිතව පාස් කරනවා (වැරදුනු තැන නිවැරදි කර ඇත)
+  // 💡 UI එකට අවශ්‍ය සියලුම Props (Name, ID, Marks) නිවැරදිව පාස් කරනවා
   return (
     <StudentDashboardUI 
+      studentName={student.name}
       studentId={student.student_id} 
       marks={marksData || []} 
     />
