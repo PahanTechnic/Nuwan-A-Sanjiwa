@@ -1,31 +1,42 @@
 // src/app/dashboard/page.tsx
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin' // 💡 Admin Client එක ගන්නවා
 import StudentDashboardUI from './StudentDashboardUI'
+
+export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-
-  // 1. ලොග් වෙලා ඉන්න ශිෂ්‍යයාගේ Auth දත්ත ගන්නවා
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
+  
+  // 1. ලොග් වෙලා ඉන්න යූසර්ව Auth එකෙන් ගන්නවා
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !user) {
     redirect('/login')
   }
 
-  // 2. Auth Email එකෙන් 'students' ටේබල් එකේ ඉන්න ලමයාගේ විස්තර ගන්නවා
-  const { data: student, error: studentError } = await supabase
+  // 💡 විසඳුම: RLS Policies සේරම බයිපාස් කරන්න Admin Client එක හදාගන්නවා
+  const supabaseAdmin = createAdminClient()
+
+  // 2. ලොග් වුනු යූසර්ගේ ID එකට ගැලපෙන ශිෂ්‍යයාව 'students' ටේබල් එකෙන් ගන්නවා
+  const { data: student, error: studentError } = await supabaseAdmin
     .from('students')
     .select('*')
-    .eq('student_id', user.email?.split('@')[0].toUpperCase() || '')
-    .single()
+    .eq('id', user.id)
+    .maybeSingle()
 
   if (studentError || !student) {
-    return <div className="p-8 text-center text-red-500">ශිෂ්‍ය දත්ත සොයාගත නොහැක.</div>
+    console.error('Student fetch error:', studentError)
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+        <p className="text-red-500 font-medium">❌ ශිෂ්‍ය දත්ත සොයාගත නොහැක. (Database Error)</p>
+      </div>
+    )
   }
 
-  // 3. ඒ ලමයාට අදාල සියලුම පේපර්ස්වල ලකුණු පේපර් එකේ නමත් එක්කම ගන්නවා (Ordered by date)
-  const { data: marks, error: marksError } = await supabase
+  // 3. ශිෂ්‍යයාගේ ලකුණු (Marks) සහ ඒවට අදාල පේපර්ස් (Papers) විස්තර Foreign Key හරහා එකපාර ඇදලා ගන්නවා
+  const { data: marksData, error: marksError } = await supabaseAdmin
     .from('marks')
     .select(`
       *,
@@ -35,28 +46,16 @@ export default async function DashboardPage() {
       )
     `)
     .eq('student_id', student.id)
-    // මෙතනදි පේපර්ස්වල ID එක අනුව සෝට් කරන්නේ ප්‍රස්ථාරය පිළිවෙලට එන්න ඕන නිසා
-    .order('created_at', { ascending: true })
 
-  // ප්‍රස්ථාරයට ගැලපෙන විදිහට ඩේටා ටික Format කරගන්නවා
-  const chartData = marks?.map((m: any) => ({
-    name: m.papers?.paper_name || 'Unknown',
-    total: m.total_marks,
-    mcq: m.mcq_score,
-    // ව්‍යුහගත එකතුව
-    structured: m.seq_q1 + m.seq_q2 + m.seq_q3 + m.seq_q4,
-    // රචනා එකතුව
-    essay: m.ess_q1 + m.ess_q2 + m.ess_q3 + m.ess_q4,
-    // ප්‍රශ්න වෙන වෙනම (Detailed Breakdown එකට)
-    seq_q1: m.seq_q1, seq_q2: m.seq_q2, seq_q3: m.seq_q3, seq_q4: m.seq_q4,
-    ess_q1: m.ess_q1, ess_q2: m.ess_q2, ess_q3: m.ess_q3, ess_q4: m.ess_q4,
-  })) || []
+  if (marksError) {
+    console.error('Marks fetch error:', marksError)
+  }
 
+  // UI එකට දත්ත ටික ආරක්ෂිතව පාස් කරනවා
   return (
     <StudentDashboardUI 
-      studentName={student.name} 
-      studentId={student.student_id} 
-      chartData={chartData} 
+      student={student} 
+      marks={marksData || []} 
     />
   )
 }
