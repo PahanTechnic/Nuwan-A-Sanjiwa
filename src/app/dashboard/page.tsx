@@ -53,9 +53,9 @@ export default async function DashboardPage() {
 
   // UI එකට දත්ත ටික ආරක්ෂිතව පාස් කරනවා
   return (
-    <StudentDashboardUI 
-      student={student} 
-      marks={marksData || []} 
-    />
+    StudentDashboardUI 
+    studentId={student.student_id} // 💡 student={student} වෙනුවට මේක දාන්න
+    marks={marksData || []} 
+  />
   )
 }
