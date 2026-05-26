@@ -1,7 +1,6 @@
 // src/app/dashboard/page.tsx
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server' // Regular client vapra
 import StudentDashboardUI from './StudentDashboardUI'
 
 export const dynamic = 'force-dynamic'
@@ -9,18 +8,15 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardPage() {
   const supabase = await createClient()
   
-  // 1. ලොග් වෙලා ඉන්න යූසර්ව Auth එකෙන් ගන්නවා
+  // 1. Logged in user auth madhun ghyava
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
     redirect('/login')
   }
 
-  // RLS Policies බයිපාස් කරන්න Admin Client එක ගන්නවා
-  const supabaseAdmin = createAdminClient()
-
-  // 2. ශිෂ්‍යයාගේ විස්තර 'students' ටේබල් එකෙන් ගන්නවා
-  const { data: student, error: studentError } = await supabaseAdmin
+  // 2. Regular client vapra - RLS automatically apply hoil
+  const { data: student, error: studentError } = await supabase
     .from('students')
     .select('*')
     .eq('id', user.id)
@@ -35,8 +31,8 @@ export default async function DashboardPage() {
     )
   }
 
-  // 3. ශිෂ්‍යයාගේ ලකුණු (Marks) සහ ඒවට අදාල පේපර්ස් (Papers) විස්තර ගන්නවා
-  const { data: marksData, error: marksError } = await supabaseAdmin
+  // 3. Shishyache marks ani papers RLS chya madatine secure paddhatine ghyava
+  const { data: marksData, error: marksError } = await supabase
     .from('marks')
     .select(`
       *,
@@ -51,12 +47,13 @@ export default async function DashboardPage() {
     console.error('Marks fetch error:', marksError)
   }
 
-  // 💡 UI එකට අවශ්‍ය සියලුම Props (Name, ID, Marks) නිවැරදිව පාස් කරනවා
+  // UI sathi data pass kara
   return (
     <StudentDashboardUI 
       studentName={student.name}
       studentId={student.student_id} 
       marks={marksData || []} 
+      chartData={[]} // Ithe tumcha chartData logic add kara
     />
   )
 }
