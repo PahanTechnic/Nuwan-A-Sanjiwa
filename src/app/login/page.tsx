@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { checkStudentStatus } from '../actions/checkStudent' // 💡 අලුත් සර්වර් ඇක්ෂන් එක ඉම්පෝර්ට් කරා
+import { checkStudentStatus } from '../actions/checkStudent'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import { ArrowLeft, LogIn, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const [studentId, setStudentId] = useState('')
@@ -27,12 +28,10 @@ export default function LoginPage() {
     const inputVal = studentId.trim()
     let email = inputVal
 
-    // 💡 Input එකේ '@' නැත්නම් විතරක් ලමයෙක් විදිහට සලකනවා
     if (!inputVal.includes('@')) {
       const upperStudentId = inputVal.toUpperCase()
       email = `${upperStudentId.toLowerCase()}@system.com`
 
-      // 🔐 සර්වර් ඇක්ෂන් එක හරහා ආරක්ෂිතව ස්ටේටස් එක බලනවා
       const check = await checkStudentStatus(upperStudentId)
 
       if (check.status === 'not_found') {
@@ -42,7 +41,7 @@ export default function LoginPage() {
       }
 
       if (check.status === 'not_approved') {
-        setError('⏳ ඔබගේ ගිණුම තවමත් සර් විසින් අනුමත (Approve) කර නැත!')
+        setError('⏳ ඔබගේ ගිණුම තවමත් සර් විසින් අනුමත කර නැත!')
         setLoading(false)
         return
       }
@@ -54,49 +53,48 @@ export default function LoginPage() {
       }
     }
 
-    // 🔐 සාමාන්‍ය පරිදි Auth එක හරහා Sign In කිරීම
     try {
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: email,
         password: bookNumber.trim(),
       })
 
-      if (authError) {
-        setError('ඇතුලත් කල තොරතුරු වැරදියයි! (ID එක හෝ පොතේ අංකය නැවත පරීක්ෂා කරන්න)')
-        setLoading(false)
-        return
-      }
+      if (authError) throw authError
 
       if (!inputVal.includes('@')) {
-        router.push('/dashboard') // ශිෂ්‍යයා
+        router.push('/dashboard')
       } else {
-        router.push('/teacher') // ගුරුවරයා
+        router.push('/teacher')
       }
-
       router.refresh()
     } catch (err) {
-      setError('ලොග් වීමට නොහැක. පද්ධතියේ දෝෂයකි.')
+      setError('ඇතුලත් කල තොරතුරු වැරදියයි! (ID එක හෝ පොතේ අංකය නැවත පරීක්ෂා කරන්න)')
+    } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md shadow-lg border border-slate-200 bg-white">
-        <CardHeader className="text-center space-y-1">
-          <CardTitle className="text-2xl font-bold tracking-tight text-slate-900">පද්ධතියට ඇතුල් වන්න</CardTitle>
-          <CardDescription>ඔබේ තොරතුරු ඇතුලත් කර ගිණුමට ලොග් වන්න</CardDescription>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <Card className="w-full max-w-md shadow-xl border-0 sm:border sm:shadow-lg bg-white/90 backdrop-blur-sm sm:bg-white">
+        <CardHeader className="space-y-1 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+            <LogIn className="h-6 w-6 text-blue-600" />
+          </div>
+          <CardTitle className="text-2xl font-bold">පද්ධතියට ඇතුල් වන්න</CardTitle>
+          <CardDescription>ඔබේ සිසු අංකය හෝ ඊමේල් ලබාදෙන්න</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             {error && (
-              <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-medium">
-                {error}
+              <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-medium flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="username">සිසු අංකය හෝ විද්‍යුත් තැපෑල (Student ID / Email)</Label>
+              <Label htmlFor="username">සිසු අංකය හෝ විද්‍යුත් තැපෑල</Label>
               <Input 
                 id="username" 
                 required 
@@ -104,12 +102,12 @@ export default function LoginPage() {
                 value={studentId} 
                 onChange={(e) => setStudentId(e.target.value)}
                 disabled={loading}
-                className="bg-slate-50/50"
+                className="bg-slate-50 border-slate-200 focus:border-blue-400"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">මුරපදය / පොතේ අංකය (Password / Book ID)</Label>
+              <Label htmlFor="password">මුරපදය / පොතේ අංකය</Label>
               <Input 
                 id="password" 
                 required 
@@ -118,17 +116,25 @@ export default function LoginPage() {
                 value={bookNumber} 
                 onChange={(e) => setBookNumber(e.target.value)}
                 disabled={loading}
-                className="bg-slate-50/50"
+                className="bg-slate-50 border-slate-200"
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-3">
-            <Button type="submit" className="w-full font-semibold shadow-sm" disabled={loading}>
-              {loading ? 'ඇතුල් වෙමින්...' : 'ඇතුල් වන්න (Log In)'}
+          <CardFooter className="flex flex-col space-y-4">
+            <Button type="submit" className="w-full rounded-full shadow-sm" disabled={loading}>
+              {loading ? 'ඇතුල් වෙමින්...' : 'ඇතුල් වන්න'}
             </Button>
-            <p className="text-xs text-center text-slate-500">
-              නව ශිෂ්‍යයෙක්ද? <Link href="/register" className="text-blue-600 font-semibold hover:underline">මෙහි ලියාපදිංචි වන්න</Link>
-            </p>
+            <div className="text-center text-sm">
+              <span className="text-slate-500">නව ශිෂ්‍යයෙක්ද? </span>
+              <Link href="/register" className="text-blue-600 font-semibold hover:underline">
+                ලියාපදිංචි වන්න
+              </Link>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="w-full text-slate-400">
+              <Link href="/" className="flex items-center justify-center gap-1">
+                <ArrowLeft className="h-3 w-3" /> ප්‍රධාන පිටුවට
+              </Link>
+            </Button>
           </CardFooter>
         </form>
       </Card>

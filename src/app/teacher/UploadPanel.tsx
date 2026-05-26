@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Download, Check, UserCheck, AlertCircle } from 'lucide-react'
+import { Download, Check, UserCheck, AlertCircle, Upload, Users, FileSpreadsheet, Clock } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface UploadPanelProps {
   pendingStudents: any[]
@@ -23,203 +24,190 @@ export default function TeacherUploadPanel({ pendingStudents }: UploadPanelProps
   const [approvingId, setApprovingId] = useState<string | null>(null)
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
-  // Students CSV කියවීමට
   const handleStudentFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => setParsedStudents(results.data),
-    })
+    Papa.parse(file, { header: true, skipEmptyLines: true, complete: (results) => setParsedStudents(results.data) })
   }
 
-  // Marks CSV කියවීමට
   const handleMarksFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => setParsedMarks(results.data),
-    })
+    Papa.parse(file, { header: true, skipEmptyLines: true, complete: (results) => setParsedMarks(results.data) })
   }
 
-  // Students Upload කිරීම
   const uploadStudents = async () => {
     if (parsedStudents.length === 0) return
     setUploading(true)
     setMessage(null)
     const res = await importStudents(parsedStudents)
-    if (res.success) {
-      setMessage({ text: `සිසුන් ඇතුලත් කිරීම අවසන්! සාර්ථක: ${res.successCount}, වැරදුනු: ${res.errorCount}`, type: 'success' })
-    } else {
-      setMessage({ text: 'ඇතුලත් කිරීමේ දෝෂයක් පවතී.', type: 'error' })
-    }
+    setMessage({ text: `සාර්ථක: ${res.successCount}, වැරදුනු: ${res.errorCount}`, type: res.success ? 'success' : 'error' })
     setParsedStudents([])
     setUploading(false)
   }
 
-  // Marks Upload කිරීම
   const uploadMarks = async () => {
     if (parsedMarks.length === 0) return
     setUploading(true)
     setMessage(null)
     const res = await importMarks(parsedMarks)
-    if (res.success) {
-      setMessage({ text: `ලකුණු ඇතුලත් කිරීම අවසන්! සාර්ථක: ${res.successCount}, වැරදුනු: ${res.errorCount}`, type: 'success' })
-    } else {
-      setMessage({ text: 'ඇතුලත් කිරීමේ දෝෂයක් පවතී.', type: 'error' })
-    }
+    setMessage({ text: `සාර්ථක: ${res.successCount}, වැරදුනු: ${res.errorCount}`, type: res.success ? 'success' : 'error' })
     setParsedMarks([])
     setUploading(false)
   }
 
-  // සිසුවෙකු අනුමත (Approve) කිරීම
   const handleApprove = async (id: string, sId: string, bNum: string) => {
     setApprovingId(id)
     setMessage(null)
     const res = await approveStudent(id, sId, bNum)
-    if (res.success) {
-      setMessage({ text: `ශිෂ්‍ය ${sId} සාර්ථකව අනුමත කරා!`, type: 'success' })
-    } else {
-      setMessage({ text: `අනුමත කිරීම අසාර්ථකයි: ${res.error}`, type: 'error' })
-    }
+    setMessage({ text: res.success ? `ශිෂ්‍ය ${sId} සාර්ථකව අනුමත කරා!` : `අනුමත කිරීම අසාර්ථකයි: ${res.error}`, type: res.success ? 'success' : 'error' })
     setApprovingId(null)
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-6 bg-slate-50 min-h-screen">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">ගුරු පාලක පැනලය (Teacher Panel)</h1>
-      </div>
-
-      {/* Dynamic Alert Messages */}
-      {message && (
-        <div className={`p-4 rounded-lg font-medium shadow-sm border flex items-center gap-3 ${
-          message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
-        }`}>
-          {message.type === 'success' ? <Check className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-          {message.text}
+    <div className="min-h-screen bg-slate-50">
+      <div className="container mx-auto px-3 sm:px-6 py-6 md:py-8 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              <Users className="h-7 w-7 text-blue-600" />
+              ගුරු පාලක පැනලය
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">ශිෂ්‍ය හා ලකුණු කළමනාකරණය</p>
+          </div>
         </div>
-      )}
 
-      <Tabs defaultValue="students" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-xl bg-white p-1 rounded-xl shadow-sm border">
-          <TabsTrigger value="students" className="rounded-lg">නව සිසුන් ඇතුලත් කිරීම</TabsTrigger>
-          <TabsTrigger value="marks" className="rounded-lg">ලකුණු (Marks) ඇතුලත් කිරීම</TabsTrigger>
-          <TabsTrigger value="approvals" className="rounded-lg relative">
-            Pending Approvals
-            {pendingStudents.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold animate-pulse">
-                {pendingStudents.length}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
+        {/* Alert Messages */}
+        {message && (
+          <div className={`p-4 rounded-xl font-medium shadow-sm border flex items-center gap-3 ${
+            message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
+          }`}>
+            {message.type === 'success' ? <Check className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+            {message.text}
+          </div>
+        )}
 
-        {/* 1. Students Tab */}
-        <TabsContent value="students" className="mt-6">
-          <Card className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle>සිසුන් CSV එක අප්ලෝඩ් කරන්න</CardTitle>
-                <CardDescription>Format: student_id, name, book_number, class_name</CardDescription>
-              </div>
-              <Button variant="outline" size="sm" asChild className="shadow-sm">
-                <a href="/templates/students_sample.csv" download="students_template.csv" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Get Sheet
-                </a>
-              </Button>
-            </CardHeader>
-            <CardContent className="flex items-center gap-4">
-              <Input type="file" accept=".csv" onChange={handleStudentFile} disabled={uploading} className="bg-white" />
-              <Button onClick={uploadStudents} disabled={parsedStudents.length === 0 || uploading}>
-                {uploading ? 'ඇතුලත් කරමින්...' : 'Students Upload'}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* 2. Marks Tab */}
-        <TabsContent value="marks" className="mt-6">
-          <Card className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle>ලකුණු CSV එක අප්ලෝඩ් කරන්න</CardTitle>
-                <CardDescription>
-                  Format: student_id, paper_name, mcq_score, seq_q1, seq_q2, seq_q3, seq_q4, ess_q1, ess_q2, ess_q3, ess_q4
-                </CardDescription>
-              </div>
-              <Button variant="outline" size="sm" asChild className="shadow-sm">
-                <a href="/templates/marks_sample.csv" download="marks_template.csv" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Get Sheet
-                </a>
-              </Button>
-            </CardHeader>
-            <CardContent className="flex items-center gap-4">
-              <Input type="file" accept=".csv" onChange={handleMarksFile} disabled={uploading} className="bg-white" />
-              <Button onClick={uploadMarks} disabled={parsedMarks.length === 0 || uploading}>
-                {uploading ? 'ඇතුලත් කරමින්...' : 'Marks Upload'}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* 3. Approvals Tab */}
-        <TabsContent value="approvals" className="mt-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>ලියාපදිංචි වීමට අවසර ඉල්ලන සිසුන්</CardTitle>
-              <CardDescription>මෙහි සිටින සිසුන් පද්ධතියට ඇතුලත් කරගැනීමට 'Approve' කරන්න.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {pendingStudents.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground bg-white border border-dashed rounded-xl">
-                  අනුමැතිය සඳහා දැනට කිසිදු ශිෂ්‍යයෙක් නොමැත.
-                </div>
-              ) : (
-                <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
-                  <Table>
-                    <TableHeader className="bg-slate-50">
-                      <TableRow>
-                        <TableHead className="font-semibold">Student ID</TableHead>
-                        <TableHead className="font-semibold">Name</TableHead>
-                        <TableHead className="font-semibold">Class Year</TableHead>
-                        <TableHead className="font-semibold">Book ID</TableHead>
-                        <TableHead className="font-semibold text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pendingStudents.map((student) => (
-                        <TableRow key={student.id} className="hover:bg-slate-50/50">
-                          <TableCell className="font-mono font-bold text-blue-600">{student.student_id}</TableCell>
-                          <TableCell className="font-medium">{student.name}</TableCell>
-                          <TableCell>{student.class_name}</TableCell>
-                          <TableCell className="text-slate-600">{student.book_number}</TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              size="sm" 
-                              className="bg-emerald-600 hover:bg-emerald-700 font-semibold gap-1.5 transition-all shadow-sm"
-                              disabled={approvingId === student.id}
-                              onClick={() => handleApprove(student.id, student.student_id, student.book_number)}
-                            >
-                              <UserCheck className="h-4 w-4" />
-                              {approvingId === student.id ? 'Approving...' : 'Approve'}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+        {/* Tabs - Mobile Responsive */}
+        <Tabs defaultValue="students" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 gap-1 bg-white p-1 rounded-xl shadow-sm border h-auto">
+            <TabsTrigger value="students" className="rounded-lg py-2 text-xs sm:text-sm data-[state=active]:bg-blue-50">
+              <Upload className="h-4 w-4 mr-1 hidden sm:inline" />
+              සිසුන්
+            </TabsTrigger>
+            <TabsTrigger value="marks" className="rounded-lg py-2 text-xs sm:text-sm">
+              <FileSpreadsheet className="h-4 w-4 mr-1 hidden sm:inline" />
+              ලකුණු
+            </TabsTrigger>
+            <TabsTrigger value="approvals" className="rounded-lg py-2 text-xs sm:text-sm relative">
+              <Clock className="h-4 w-4 mr-1 hidden sm:inline" />
+              අනුමැති
+              {pendingStudents.length > 0 && (
+                <Badge variant="destructive" className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs rounded-full">
+                  {pendingStudents.length}
+                </Badge>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab 1 - Students */}
+          <TabsContent value="students" className="mt-6">
+            <Card className="shadow-sm border-0 sm:border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg sm:text-xl">සිසුන් CSV එක අප්ලෝඩ් කරන්න</CardTitle>
+                <CardDescription>Format: student_id, name, book_number, class_name</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col sm:flex-row gap-4">
+                <Input type="file" accept=".csv" onChange={handleStudentFile} disabled={uploading} className="bg-white flex-1" />
+                <Button onClick={uploadStudents} disabled={parsedStudents.length === 0 || uploading} className="sm:w-auto w-full">
+                  {uploading ? 'ඇතුලත් කරමින්...' : 'Students Upload කරන්න'}
+                </Button>
+                <Button variant="outline" size="sm" asChild className="sm:w-auto w-full">
+                  <a href="/templates/students_sample.csv" download className="flex items-center justify-center gap-2">
+                    <Download className="h-4 w-4" /> Sample CSV
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 2 - Marks */}
+          <TabsContent value="marks" className="mt-6">
+            <Card className="shadow-sm border-0 sm:border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg sm:text-xl">ලකුණු CSV එක අප්ලෝඩ් කරන්න</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">student_id, paper_name, mcq_score, seq_q1..q4, ess_q1..q4</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col sm:flex-row gap-4">
+                <Input type="file" accept=".csv" onChange={handleMarksFile} disabled={uploading} className="bg-white flex-1" />
+                <Button onClick={uploadMarks} disabled={parsedMarks.length === 0 || uploading} className="sm:w-auto w-full">
+                  {uploading ? 'ඇතුලත් කරමින්...' : 'Marks Upload කරන්න'}
+                </Button>
+                <Button variant="outline" size="sm" asChild className="sm:w-auto w-full">
+                  <a href="/templates/marks_sample.csv" download className="flex items-center justify-center gap-2">
+                    <Download className="h-4 w-4" /> Sample CSV
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 3 - Approvals */}
+          <TabsContent value="approvals" className="mt-6">
+            <Card className="shadow-sm border-0 sm:border">
+              <CardHeader>
+                <CardTitle className="text-lg sm:text-xl">අනුමැතිය සඳහා රැඳී සිටින සිසුන්</CardTitle>
+                <CardDescription>Approve කිරීමෙන් පසු ඔවුන්ට ලොග් විය හැක.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pendingStudents.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground bg-white border border-dashed rounded-xl">
+                    <Check className="h-10 w-10 mx-auto text-green-500 mb-2" />
+                    අනුමැතිය සඳහා දැනට කිසිදු ශිෂ්‍යයෙක් නොමැත.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-1">
+                    <div className="min-w-[640px] border rounded-xl overflow-hidden bg-white shadow-sm">
+                      <Table>
+                        <TableHeader className="bg-slate-50">
+                          <TableRow>
+                            <TableHead className="font-semibold">Student ID</TableHead>
+                            <TableHead className="font-semibold">Name</TableHead>
+                            <TableHead className="font-semibold hidden sm:table-cell">Class</TableHead>
+                            <TableHead className="font-semibold hidden md:table-cell">Book ID</TableHead>
+                            <TableHead className="font-semibold text-right">Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pendingStudents.map((student) => (
+                            <TableRow key={student.id} className="hover:bg-slate-50/50">
+                              <TableCell className="font-mono font-bold text-blue-600 text-sm">{student.student_id}</TableCell>
+                              <TableCell className="font-medium truncate max-w-[120px]">{student.name}</TableCell>
+                              <TableCell className="hidden sm:table-cell text-slate-600">{student.class_name}</TableCell>
+                              <TableCell className="hidden md:table-cell text-slate-500 text-sm">{student.book_number}</TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  size="sm" 
+                                  className="bg-emerald-600 hover:bg-emerald-700 rounded-full px-3"
+                                  disabled={approvingId === student.id}
+                                  onClick={() => handleApprove(student.id, student.student_id, student.book_number)}
+                                >
+                                  <UserCheck className="h-3.5 w-3.5 mr-1" />
+                                  {approvingId === student.id ? '...' : 'Approve'}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 }

@@ -2,7 +2,9 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function checkStudentStatus(studentId: string) {
+export type StudentStatus = 'success' | 'not_found' | 'not_approved' | 'error'
+
+export async function checkStudentStatus(studentId: string): Promise<{ status: StudentStatus }> {
   const supabaseAdmin = createAdminClient()
   const upperId = studentId.trim().toUpperCase()
 

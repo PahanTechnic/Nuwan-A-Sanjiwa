@@ -8,41 +8,31 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardPage() {
   const supabase = await createClient()
   
-  // 1. Auth එකෙන් logged-in user ගන්නවා
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
-  if (authError || !user) {
-    redirect('/login')
-  }
+  if (authError || !user) redirect('/login')
 
-  // 2. students table ෙකෝ query - id column Auth UUID එකට match වෙනවා
+  // ✅ auth_user_id column එකෙන් search කරන්න (id replace නැහැ)
   const { data: student, error: studentError } = await supabase
     .from('students')
     .select('*')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)  // මෙතන වෙනස!
     .maybeSingle()
 
-  // ✅ Debug: error details log කරනවා (Vercel logs ල පේනවා)
   if (studentError) {
     console.error('Student fetch error:', JSON.stringify(studentError))
   }
 
   if (!student) {
-    console.error(`No student found for auth user id: ${user.id}, email: ${user.email}`)
+    console.error(`No student found for auth user id: ${user.id}`)
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4 gap-3">
         <p className="text-red-500 font-medium text-lg">❌ ශිෂ්‍ය දත්ත සොයාගත නොහැක.</p>
-        <p className="text-slate-500 text-sm">User ID: {user.id}</p>
-        <p className="text-slate-500 text-sm">Email: {user.email}</p>
-        <p className="text-slate-400 text-xs mt-2">
-          ගැටලුව: ඔබේ student record Auth UUID එකෙන් link වෙලා නැහැ. 
-          Teacher ව contact කරන්න.
-        </p>
+        <p className="text-slate-500 text-sm">ගුරුවරයා අමතන්න. ඔබගේ ගිණුම තවමත් සම්බන්ධ කර නැත.</p>
       </div>
     )
   }
 
-  // 3. ශිෂ්‍යයාගේ marks සහ paper details ගන්නවා
   const { data: marksData, error: marksError } = await supabase
     .from('marks')
     .select(`
@@ -55,9 +45,7 @@ export default async function DashboardPage() {
     .eq('student_id', student.id)
     .order('created_at', { ascending: true })
 
-  if (marksError) {
-    console.error('Marks fetch error:', JSON.stringify(marksError))
-  }
+  if (marksError) console.error('Marks fetch error:', JSON.stringify(marksError))
 
   return (
     <StudentDashboardUI 

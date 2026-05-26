@@ -5,33 +5,28 @@ import { revalidatePath } from 'next/cache'
 
 export async function approveStudent(id: string, studentId: string, bookNumber: string) {
   const supabaseAdmin = createAdminClient()
-  const email = `${studentId.toLowerCase()}@system.com`
 
   try {
-    // 1. Supabase Auth එකේ Account හදනවා
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      password: bookNumber.trim(),
-      email_confirm: true
-    })
+    // 1. පළමුව student record එකේ auth_user_id එක check කරන්න
+    const { data: student, error: fetchError } = await supabaseAdmin
+      .from('students')
+      .select('auth_user_id')
+      .eq('id', id)
+      .single()
 
-    if (authError) throw authError
+    if (fetchError || !student) throw new Error('Student not found')
+    if (!student.auth_user_id) throw new Error('Auth user not associated with this student')
 
-    // 2. students table ල id ත් Auth UUID එකට update කරනවා + approved = true
-    // ✅ id column update - මේක නැතිව dashboard ල .eq('id', user.id) fail වෙනවා
+    // 2. Auth user දැනටමත් පවතිනවා (register step එකේදී හැදුවා)
+    //    අවශ්‍ය නම් email confirm කරන්න (already confirmed)
+    
+    // 3. students table එකේ approved flag එක true කරන්න (id replace නැතුව!)
     const { error: dbError } = await supabaseAdmin
       .from('students')
-      .update({ 
-        approved: true,
-        id: authData.user.id // ✅ Auth UUID එක students table id ට දානවා
-      })
+      .update({ approved: true })
       .eq('id', id)
 
-    if (dbError) {
-      // DB error නම් Auth user delete කරනවා (rollback)
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-      throw dbError
-    }
+    if (dbError) throw dbError
 
     revalidatePath('/teacher')
     return { success: true }
