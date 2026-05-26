@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Papa from 'papaparse'
 import { importStudents } from '../actions/importStudents'
 import { importMarks } from '../actions/importMarks'
 import { approveStudent } from '../actions/approveStudent'
+import { createClient } from '@/lib/supabase/client' // ✅ Supabase client එක නිවැරදිව ඉම්පෝර්ට් කර ඇත
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,12 +20,40 @@ interface UploadPanelProps {
 }
 
 export default function TeacherUploadPanel({ pendingStudents }: UploadPanelProps) {
+  // 1. සේරම States ටික කම්පෝනන්ට් එක ඇතුලට ගත්තා
+  const [localPending, setLocalPending] = useState<any[]>(pendingStudents)
   const [parsedStudents, setParsedStudents] = useState<any[]>([])
   const [parsedMarks, setParsedMarks] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
   const [approvingId, setApprovingId] = useState<string | null>(null)
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
+  // Props වෙනස් වුණොත් local state එකත් අප්ඩේට් වෙන්න මේක වටිනවා
+  useEffect(() => {
+    setLocalPending(pendingStudents)
+  }, [pendingStudents])
+
+  // 2. Realtime Subscription එක කම්පෝනන්ට් එක ඇතුලට ගත්තා
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('pending-students-watch')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'students' },
+        (payload) => {
+          if (!payload.new.approved) {
+            setLocalPending(prev => [...prev, payload.new]) // ✅ අලුත් සිසුවෙක් ආවොත් ඔටෝ ඇඩ් වෙනවා
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  // CSV Handle කරන ෆන්ක්ෂන්ස්
   const handleStudentFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -56,11 +86,19 @@ export default function TeacherUploadPanel({ pendingStudents }: UploadPanelProps
     setUploading(false)
   }
 
+  // 3. ෆන්ක්ෂන් දෙකම එකතු කරලා හදපු තනි Approve Handler එක (Optimistic + Message UI)
   const handleApprove = async (id: string, sId: string, bNum: string) => {
     setApprovingId(id)
     setMessage(null)
+    
     const res = await approveStudent(id, sId, bNum)
-    setMessage({ text: res.success ? `ශිෂ්‍ය ${sId} සාර්ථකව අනුමත කරා!` : `අනුමත කිරීම අසාර්ථකයි: ${res.error}`, type: res.success ? 'success' : 'error' })
+    
+    if (res.success) {
+      setLocalPending(prev => prev.filter(s => s.id !== id)) // ✅ ලිස්ට් එකෙන් ඔටෝ අයින් වෙනවා
+      setMessage({ text: `ශිෂ්‍ය ${sId} සාර්ථකව අනුමත කරා!`, type: 'success' })
+    } else {
+      setMessage({ text: `අනුමත කිරීම අසාර්ථකයි: ${res.error}`, type: 'error' })
+    }
     setApprovingId(null)
   }
 
@@ -74,7 +112,7 @@ export default function TeacherUploadPanel({ pendingStudents }: UploadPanelProps
               <Users className="h-7 w-7 text-blue-600" />
               ගුරු පාලක පැනලය
             </h1>
-            <p className="text-slate-500 text-sm mt-1">ශිෂ්‍ය හා ලකුණු කළමනාකරණය</p>
+            <p className="text-slate-500 text-sm mt-1">#0E ශිෂ්‍ය හා ලකුණු කළමනාකරණය</p>
           </div>
         </div>
 
@@ -88,7 +126,6 @@ export default function TeacherUploadPanel({ pendingStudents }: UploadPanelProps
           </div>
         )}
 
-        {/* Tabs - Mobile Responsive */}
         <Tabs defaultValue="students" className="w-full">
           <TabsList className="grid w-full grid-cols-3 gap-1 bg-white p-1 rounded-xl shadow-sm border h-auto">
             <TabsTrigger value="students" className="rounded-lg py-2 text-xs sm:text-sm data-[state=active]:bg-blue-50">
@@ -102,9 +139,10 @@ export default function TeacherUploadPanel({ pendingStudents }: UploadPanelProps
             <TabsTrigger value="approvals" className="rounded-lg py-2 text-xs sm:text-sm relative">
               <Clock className="h-4 w-4 mr-1 hidden sm:inline" />
               අනුමැති
-              {pendingStudents.length > 0 && (
+              {/* 💡 `localPending` පාවිච්චි කරලා Badge එක රියල්ටයිම් කවුන්ට් වෙනවා */}
+              {localPending.length > 0 && (
                 <Badge variant="destructive" className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs rounded-full">
-                  {pendingStudents.length}
+                  {localPending.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -160,7 +198,8 @@ export default function TeacherUploadPanel({ pendingStudents }: UploadPanelProps
                 <CardDescription>Approve කිරීමෙන් පසු ඔවුන්ට ලොග් විය හැක.</CardDescription>
               </CardHeader>
               <CardContent>
-                {pendingStudents.length === 0 ? (
+                {/* 💡 `localPending` චෙක් කරයි */}
+                {localPending.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground bg-white border border-dashed rounded-xl">
                     <Check className="h-10 w-10 mx-auto text-green-500 mb-2" />
                     අනුමැතිය සඳහා දැනට කිසිදු ශිෂ්‍යයෙක් නොමැත.
@@ -179,7 +218,8 @@ export default function TeacherUploadPanel({ pendingStudents }: UploadPanelProps
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {pendingStudents.map((student) => (
+                          {/* 💡 `localPending` මැප් කරලා තියෙන්නේ, දැන් Realtime සුපිරියටම වැඩ */}
+                          {localPending.map((student) => (
                             <TableRow key={student.id} className="hover:bg-slate-50/50">
                               <TableCell className="font-mono font-bold text-blue-600 text-sm">{student.student_id}</TableCell>
                               <TableCell className="font-medium truncate max-w-[120px]">{student.name}</TableCell>

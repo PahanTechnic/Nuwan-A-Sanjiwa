@@ -48,10 +48,11 @@ export default async function DashboardPage() {
   if (marksError) console.error('Marks fetch error:', JSON.stringify(marksError))
 
   return (
-    <StudentDashboardUI 
-      studentName={student.name}
-      studentId={student.student_id} 
-      marks={marksData || []} 
-    />
+    <StudentDashboardUI
+    studentName={student.name}
+    studentId={student.student_id}
+    studentDbId={student.id}        // ✅ NEW — DB UUID
+    initialMarks={marksData || []}  // ✅ prop නම වෙනස් කළා
+  />
   )
 }
