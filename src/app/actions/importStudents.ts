@@ -1,4 +1,3 @@
-'use fancy-server' // Next.js Server Action
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -24,26 +23,30 @@ export async function importStudents(studentsList: StudentRow[]) {
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
-      email_confirm: true, // Email Confirm කරන්න ඕන නැහැ කෙලින්ම Active වෙනවා
+      email_confirm: true,
     })
 
     if (authError) {
       console.error(`Auth Error for ${student.student_id}:`, authError.message)
       errorCount++
-      continue; // මේ ලමයාගේ අවුලක් නම් ඊළඟ ලමයාට යනවා
+      continue
     }
 
-    // 2. Auth එකේ හැදුන Userව අපේ 'students' ටේබල් එකටත් ඇතුලත් කරනවා
+    // 2. Auth UUID එකම students table ට දානවා (මේකයි fix එක!)
     if (authUser.user) {
       const { error: dbError } = await supabaseAdmin.from('students').insert({
+        id: authUser.user.id, // ✅ Auth UUID එක id column ට දානවා - මේක නැතිව dashboard fail වෙනවා
         student_id: student.student_id.trim(),
         name: student.name.trim(),
         book_number: password,
         class_name: student.class_name.trim(),
+        approved: true, // import කරන ලමයි directly approved
       })
 
       if (dbError) {
         console.error(`DB Error for ${student.student_id}:`, dbError.message)
+        // DB error නම් Auth user ත් delete කරනවා (rollback)
+        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
         errorCount++
       } else {
         successCount++
