@@ -1,9 +1,8 @@
 'use server'
 
-import { revalidatePath } from 'next/cache' // 💡 මෙන්න මේ පේළිය උඩින්ම දාන්න
+import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Unique Student ID එකක් Generate කරන ෆන්ක්ෂන් එක
 async function generateUniqueStudentId(className: string, supabaseAdmin: any): Promise<string> {
   const yy = className.slice(-2) // 2026 -> 26
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -13,10 +12,9 @@ async function generateUniqueStudentId(className: string, supabaseAdmin: any): P
 
   while (!isUnique) {
     const randomLetter = letters.charAt(Math.floor(Math.random() * letters.length))
-    const randomDigits = Math.floor(1000 + Math.random() * 9000).toString() // ඉලක්කම් 4ක් (1000 - 9999)
+    const randomDigits = Math.floor(1000 + Math.random() * 9000).toString()
     generatedId = `ET${yy}-${randomLetter}${randomDigits}`
 
-    // ඩේටාබේස් එකේ දැනටමත් මේ ID එක තියෙනවද බලනවා
     const { data } = await supabaseAdmin
       .from('students')
       .select('student_id')
@@ -24,7 +22,7 @@ async function generateUniqueStudentId(className: string, supabaseAdmin: any): P
       .single()
 
     if (!data) {
-      isUnique = true // ඩේටාබේස් එකේ නැත්නම් විතරක් ලූප් එක නතර කරනවා
+      isUnique = true
     }
   }
 
@@ -35,23 +33,23 @@ export async function registerStudent(formData: { name: string; className: strin
   const supabaseAdmin = createAdminClient()
 
   try {
-    // 1. Unique ID එකක් හදාගන්නවා
+    // 1. Unique Student ID හදනවා
     const studentId = await generateUniqueStudentId(formData.className, supabaseAdmin)
 
-    // 2. 'students' ටේබල් එකට දානවා (approved = false විදිහට)
+    // 2. students table ට insert කරනවා (approved = false - teacher approve කරන්න ඕන)
+    // ✅ id column: approve වෙනකොට authData.user.id update වෙනවා (approveStudent.ts ල)
+    // Register step ල id auto-generate වෙනවා (UUID), approve step ල Auth UUID එකෙන් replace වෙනවා
     const { error } = await supabaseAdmin.from('students').insert({
       student_id: studentId,
-      name: formData.name,
+      name: formData.name.trim(),
       book_number: formData.bookNumber.trim(),
       class_name: formData.className,
-      approved: false // තවම සර් Approve කරලා නැහැ
+      approved: false
     })
-
-    revalidatePath('/teacher')
-
 
     if (error) throw error
 
+    revalidatePath('/teacher')
     return { success: true, studentId }
   } catch (error: any) {
     console.error('Registration Error:', error.message)
