@@ -8,9 +8,10 @@ interface DashboardUIProps {
   studentName: string
   studentId: string
   chartData: any[]
+marks: any[]; // 💡 මේ පේලිය අලුතින් එකතු කරන්න
 }
 
-export default function StudentDashboardUI({ studentName, studentId, chartData }: DashboardUIProps) {
+export default function StudentDashboardUI({ studentName, studentId, chartData,marks }: DashboardUIProps) {
   
   // අන්තිමටම ලියපු පේපර් එකේ ලකුණු (Latest Score)
   const latestResult = chartData[chartData.length - 1] || {}
