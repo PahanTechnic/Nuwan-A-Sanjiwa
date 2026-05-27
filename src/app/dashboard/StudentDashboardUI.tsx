@@ -12,7 +12,7 @@ import {
   ChartTooltipContent, type ChartConfig,
 } from '@/components/ui/chart'
 import {
-  LineChart, Line, CartesianGrid, XAxis,
+  LineChart, Line, CartesianGrid, XAxis, YAxis,
   RadialBarChart, RadialBar, PolarGrid,
 } from 'recharts'
 import {
@@ -277,12 +277,12 @@ export default function StudentDashboardUI({
       </nav>
 
       {/* ── HERO ── */}
-      <section className="px-4 sm:px-6 py-12 sm:py-20 border-b border-slate-100">
+      <section className="px-4 sm:px-6 py-10 sm:py-20 border-b border-slate-100">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-xs font-medium uppercase tracking-widest text-slate-400 mb-4">
             Engineering Technology Analytics
           </p>
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-[#020617] leading-none">
+          <h1 className="text-3xl sm:text-6xl md:text-7xl font-black tracking-tight text-[#020617] leading-tight">
             Welcome back,{' '}
             <span className="italic">{studentName}</span>
           </h1>
@@ -327,10 +327,10 @@ export default function StudentDashboardUI({
             <div key={s.label} className="border border-slate-200 rounded-2xl sm:rounded-3xl p-5 sm:p-8">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-xs text-slate-400 uppercase tracking-widest font-medium truncate">{s.label}</p>
-                  <p className="text-3xl sm:text-4xl md:text-5xl font-black text-[#020617] mt-2 leading-none">
+          <p className="text-xs text-slate-400 uppercase tracking-widest font-medium truncate">{s.label}</p>
+                  <p className="text-2xl sm:text-4xl md:text-5xl font-black text-[#020617] mt-2 leading-none">
                     {s.value}
-                    {s.unit && <span className="text-base sm:text-lg font-medium text-slate-400 ml-1">{s.unit}</span>}
+                    {s.unit && <span className="text-sm sm:text-lg font-medium text-slate-400 ml-1">{s.unit}</span>}
                   </p>
                   <p className="text-xs text-slate-400 mt-1.5">{s.sub}</p>
                 </div>
@@ -387,12 +387,19 @@ export default function StudentDashboardUI({
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={trendConfig} className="h-[260px] sm:h-[320px] w-full">
-                    <LineChart data={chartData} margin={{ left: 0, right: 12 }}>
+                    <LineChart data={chartData} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
                       <CartesianGrid vertical={false} stroke="#f1f5f9" />
                       <XAxis
-                        dataKey="name" tickLine={false} axisLine={false}
+                        dataKey="name" tickLine={false} axisLine={{ stroke: '#e2e8f0' }}
                         tickMargin={8} tick={{ fontSize: 11 }}
                         tickFormatter={shortName}
+                      />
+                      <YAxis
+                        tickLine={false} axisLine={{ stroke: '#e2e8f0' }}
+                        tick={{ fontSize: 11 }} tickMargin={8}
+                        domain={[0, 100]} tickCount={6}
+                        tickFormatter={(v) => `${v}`}
+                        width={36}
                       />
                       <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                       <Line
@@ -476,8 +483,8 @@ export default function StudentDashboardUI({
                   </div>
 
                   {/* Score breakdown table */}
-                  <div className="rounded-2xl border border-slate-100 overflow-hidden mb-6">
-                    <table className="w-full text-sm">
+                  <div className="rounded-2xl border border-slate-100 overflow-hidden mb-6 overflow-x-auto">
+                    <table className="w-full text-sm min-w-[320px]">
                       <thead>
                         <tr className="bg-slate-50">
                           <th className="text-left px-4 py-2 text-xs font-medium text-slate-400 uppercase tracking-widest">Section</th>
@@ -519,9 +526,9 @@ export default function StudentDashboardUI({
                       </p>
                       <div className="grid grid-cols-4 gap-2 sm:gap-3">
                         {[paper.sq1, paper.sq2, paper.sq3, paper.sq4].map((q, idx) => (
-                          <div key={idx} className="border border-slate-200 rounded-2xl p-3 text-center">
+                          <div key={idx} className="border border-slate-200 rounded-2xl p-2 sm:p-3 text-center">
                             <p className="text-xs text-slate-400">SQ {idx + 1}</p>
-                            <p className="text-xl sm:text-2xl font-black text-[#020617] mt-1">{q}</p>
+                            <p className="text-lg sm:text-2xl font-black text-[#020617] mt-1">{q}</p>
                             <p className="text-xs text-slate-400 mt-0.5">
                               {Number(((q / SQ_PER_Q) * 100).toFixed(0))}%
                             </p>
@@ -536,9 +543,9 @@ export default function StudentDashboardUI({
                       </p>
                       <div className="grid grid-cols-4 gap-2 sm:gap-3">
                         {[paper.es1, paper.es2, paper.es3, paper.es4].map((q, idx) => (
-                          <div key={idx} className="border border-slate-200 rounded-2xl p-3 text-center">
+                          <div key={idx} className="border border-slate-200 rounded-2xl p-2 sm:p-3 text-center">
                             <p className="text-xs text-slate-400">EQ {idx + 1}</p>
-                            <p className="text-xl sm:text-2xl font-black text-[#020617] mt-1">{q}</p>
+                            <p className="text-lg sm:text-2xl font-black text-[#020617] mt-1">{q}</p>
                             <p className="text-xs text-slate-400 mt-0.5">
                               {Number(((q / EQ_PER_Q) * 100).toFixed(0))}%
                             </p>
@@ -610,11 +617,17 @@ export default function StudentDashboardUI({
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={sqConfig} className="h-[260px] sm:h-[320px] w-full">
-                    <LineChart data={chartData} margin={{ left: 0, right: 12 }}>
+                    <LineChart data={chartData} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
                       <CartesianGrid vertical={false} stroke="#f1f5f9" />
                       <XAxis
-                        dataKey="name" tickLine={false} axisLine={false}
+                        dataKey="name" tickLine={false} axisLine={{ stroke: '#e2e8f0' }}
                         tickMargin={8} tick={{ fontSize: 11 }} tickFormatter={shortName}
+                      />
+                      <YAxis
+                        tickLine={false} axisLine={{ stroke: '#e2e8f0' }}
+                        tick={{ fontSize: 11 }} tickMargin={8}
+                        domain={[0, SQ_PER_Q]} tickCount={6}
+                        width={36}
                       />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       {(['sq1', 'sq2', 'sq3', 'sq4'] as const).map(k => (
@@ -637,11 +650,17 @@ export default function StudentDashboardUI({
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={eqConfig} className="h-[260px] sm:h-[320px] w-full">
-                    <LineChart data={chartData} margin={{ left: 0, right: 12 }}>
+                    <LineChart data={chartData} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
                       <CartesianGrid vertical={false} stroke="#f1f5f9" />
                       <XAxis
-                        dataKey="name" tickLine={false} axisLine={false}
+                        dataKey="name" tickLine={false} axisLine={{ stroke: '#e2e8f0' }}
                         tickMargin={8} tick={{ fontSize: 11 }} tickFormatter={shortName}
+                      />
+                      <YAxis
+                        tickLine={false} axisLine={{ stroke: '#e2e8f0' }}
+                        tick={{ fontSize: 11 }} tickMargin={8}
+                        domain={[0, EQ_PER_Q]} tickCount={6}
+                        width={36}
                       />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       {(['es1', 'es2', 'es3', 'es4'] as const).map(k => (
@@ -662,8 +681,8 @@ export default function StudentDashboardUI({
                     <p className="text-xs font-medium uppercase tracking-widest text-slate-400 mb-1">Full Breakdown</p>
                     <h3 className="text-xl font-black text-[#020617]">All papers · all questions</h3>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm min-w-[700px]">
+                  <div className="overflow-x-auto -mx-0">
+                    <table className="w-full text-sm min-w-[560px]">
                       <thead className="bg-slate-50">
                         <tr>
                           <th className="text-left px-6 py-3 text-xs font-medium text-slate-400 uppercase tracking-widest sticky left-0 bg-slate-50">Paper</th>

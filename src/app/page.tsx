@@ -1,6 +1,7 @@
 // src/app/page.tsx
 import Link from 'next/link'
 import { Noto_Serif_Sinhala, Noto_Sans_Sinhala } from 'next/font/google'
+import Navbar from '@/components/Navbar' // 💡 අපි හදපු Navbar එක Import කරනවා
 
 // Fonts setup - Standard Google Fonts for Sinhala
 const notoSansSinhala = Noto_Sans_Sinhala({
@@ -19,7 +20,8 @@ export default function LandingPage() {
   return (
     <div className={`min-h-screen ${notoSansSinhala.variable} ${notoSerifSinhala.variable} font-noto-sans bg-white text-black`}>
       
-      
+      {/* --- 1. Header (Navbar Component) --- */}
+        <Navbar />
 
       {/* --- 2. Hero Section --- */}
       <main className="max-w-[1400px] mx-auto px-6 pt-32 pb-24 flex flex-col items-center text-center">
