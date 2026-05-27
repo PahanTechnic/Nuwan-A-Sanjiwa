@@ -12,7 +12,7 @@ import {
   ChartTooltipContent, type ChartConfig,
 } from '@/components/ui/chart'
 import {
-  LineChart, Line, CartesianGrid, XAxis, YAxis,
+  LineChart, Line, AreaChart, Area, CartesianGrid, XAxis, YAxis,
   RadialBarChart, RadialBar, PolarGrid,
 } from 'recharts'
 import {
@@ -376,7 +376,7 @@ export default function StudentDashboardUI({
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-              {/* Line chart – total per paper */}
+              {/* Area chart with gradient – total per paper */}
               <Card className="xl:col-span-2 rounded-3xl border-slate-200 shadow-none">
                 <CardHeader>
                   <p className="text-xs font-medium uppercase tracking-widest text-slate-400">Performance Trend</p>
@@ -387,7 +387,14 @@ export default function StudentDashboardUI({
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={trendConfig} className="h-[260px] sm:h-[320px] w-full">
-                    <LineChart data={chartData} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
+                    <AreaChart data={chartData} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
+                      <defs>
+                        <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--color-total)" stopOpacity={0.35} />
+                          <stop offset="60%" stopColor="var(--color-total)" stopOpacity={0.08} />
+                          <stop offset="100%" stopColor="var(--color-total)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid vertical={false} stroke="#f1f5f9" />
                       <XAxis
                         dataKey="name" tickLine={false} axisLine={{ stroke: '#e2e8f0' }}
@@ -401,13 +408,18 @@ export default function StudentDashboardUI({
                         tickFormatter={(v) => `${v}`}
                         width={36}
                       />
-                      <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                      <Line
-                        dataKey="total" type="natural"
-                        stroke="var(--color-total)" strokeWidth={2}
-                        dot={{ fill: 'var(--color-total)', r: 4 }}
+                      <ChartTooltip
+                        cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '4 4' }}
+                        content={<ChartTooltipContent hideLabel />}
                       />
-                    </LineChart>
+                      <Area
+                        dataKey="total" type="natural"
+                        stroke="var(--color-total)" strokeWidth={2.5}
+                        fill="url(#gradTotal)"
+                        dot={{ fill: 'var(--color-total)', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff', fill: 'var(--color-total)' }}
+                      />
+                    </AreaChart>
                   </ChartContainer>
                 </CardContent>
                 <CardFooter className="flex-col items-start gap-1 text-sm pt-0">
@@ -587,7 +599,7 @@ export default function StudentDashboardUI({
                 <h2 className="text-3xl sm:text-4xl font-black text-[#020617]">AI Study Assistant</h2>
                 <p className="text-sm text-slate-400 mt-1">ඔයාගේ marks data analyze කරලා A/L Engineering Technology syllabus target කරගත් personalized advice.</p>
               </div>
-              <div className="border border-slate-200 rounded-3xl p-5 sm:p-6">
+              <div className="border border-slate-200 rounded-3xl p-5 sm:p-6 overflow-hidden">
                 <AIChatPanel
                   studentName={studentName}
                   studentId={studentId}

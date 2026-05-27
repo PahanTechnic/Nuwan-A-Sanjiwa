@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat \"E:/Pahan web project/Nuwan A Sanjiwa/my-app/package.json\")",
+      "Bash(npx tsc --noEmit --pretty)",
+      "Bash(node -e \"try { require(''@babel/parser'').parse(require(''fs'').readFileSync(''src/app/dashboard/StudentDashboardUI.tsx'',''utf8''), { sourceType:''module'', plugins:[''typescript'',''jsx''] }); console.log(''SYNTAX OK'') } catch(e) { console.log(''SYNTAX ERROR:'', e.message) }\")",
+      "Bash(node -e \"const p=require(''@babel/parser'');const fs=require(''fs'');[''src/app/dashboard/StudentDashboardUI.tsx'',''src/components/AIChatPanel.tsx''].forEach(f=>{try{p.parse(fs.readFileSync(f,''utf8''),{sourceType:''module'',plugins:[''typescript'',''jsx'']});console.log(f+'' ✓'')}catch(e){console.log(f+'' ERROR:'',e.message)}})\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

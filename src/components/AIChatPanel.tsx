@@ -183,11 +183,11 @@ export default function AIChatPanel({
   const isEmpty = messages.length === 0
 
   return (
-    <div className="flex flex-col h-[70vh] min-h-[500px] max-h-[800px]">
+    <div className="flex flex-col h-[600px] max-h-[70vh] overflow-hidden">
 
       {/* ── Welcome banner (shown when no messages) ── */}
       {isEmpty && (
-        <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
+        <div className="flex-1 overflow-y-auto flex flex-col items-center justify-start px-4 py-6 gap-5">
 
           {/* Icon */}
           <div className="h-16 w-16 rounded-3xl border border-slate-200 bg-white shadow-sm flex items-center justify-center">
@@ -217,7 +217,7 @@ export default function AIChatPanel({
           )}
 
           {/* Quick prompts */}
-          <div className="w-full max-w-sm space-y-2">
+          <div className="w-full max-w-sm space-y-2 pb-4">
             <p className="text-xs font-medium uppercase tracking-widest text-slate-400 text-center mb-3">Quick Start</p>
             {QUICK_PROMPTS.map(p => (
               <button
@@ -234,9 +234,9 @@ export default function AIChatPanel({
 
       {/* ── Message list ── */}
       {!isEmpty && (
-        <div className="flex-1 overflow-y-auto px-1 py-2 space-y-4">
+        <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-3 space-y-4 scroll-smooth">
           {messages.map(msg => (
-            <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={msg.id} className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
 
               {/* Assistant avatar */}
               {msg.role === 'assistant' && (
@@ -298,7 +298,7 @@ export default function AIChatPanel({
       )}
 
       {/* ── Input area ── */}
-      <div className="border-t border-slate-100 pt-4 mt-2">
+      <div className="border-t border-slate-100 pt-3 mt-auto shrink-0">
 
         {/* Image preview strip */}
         {pendingImage && (
@@ -349,7 +349,7 @@ export default function AIChatPanel({
             disabled={isLoading}
             rows={1}
             placeholder="Ask anything about your papers or A/L syllabus…"
-            className="flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm text-[#020617] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-50 min-h-[44px] max-h-[120px]"
+            className="flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm text-[#020617] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-300 disabled:opacity-50 min-h-[44px] max-h-[120px] transition-shadow"
             style={{ height: 'auto' }}
             onInput={e => {
               const t = e.currentTarget
