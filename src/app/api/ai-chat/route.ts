@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     // ── Upload image to Supabase Storage if provided ──────────────────────────
     if (imageFile && imageFile.size > 0) {
-      const supabase = createClient()
+      const supabase = await createClient()
       const bytes    = await imageFile.arrayBuffer()
       const buffer   = Buffer.from(bytes)
 
