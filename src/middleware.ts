@@ -2,57 +2,171 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request: { headers: request.headers } })
 
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  // =========================
+  // SUPABASE CLIENT
+  // =========================
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return request.cookies.getAll() },
+        getAll() {
+          return request.cookies.getAll()
+        },
+
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+
+          cookiesToSet.forEach(
+            ({ name, value }) =>
+              request.cookies.set(name, value)
+          )
+
+          response = NextResponse.next({
+            request,
+          })
+
+          cookiesToSet.forEach(
+            ({ name, value, options }) =>
+              response.cookies.set(
+                name,
+                value,
+                {
+                  ...options,
+                  path: '/',
+                }
+              )
           )
         },
       },
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
-  const { pathname } = request.nextUrl
+  // =========================
+  // GET USER
+  // =========================
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
 
-  // 1. ලොග් නොවී protected routes වලට යන්න හැදුවොත් login වෙත හරවන්න
-  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/teacher'))) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if (error) {
+    console.error(
+      'Middleware Auth Error:',
+      error.message
+    )
   }
 
-  // 2. ලොග් වෙලා ඉන්න අයව නිවැරදි dashboard වෙත හරවන්න
+  const { pathname } = request.nextUrl
+
+  // =========================
+  // PUBLIC ROUTES
+  // =========================
+  const publicRoutes = [
+    '/',
+    '/login',
+  ]
+
+  const isPublicRoute =
+    publicRoutes.includes(pathname)
+
+  // =========================
+  // PROTECTED ROUTES
+  // =========================
+  const isDashboardRoute =
+    pathname.startsWith('/dashboard')
+
+  const isTeacherRoute =
+    pathname.startsWith('/teacher')
+
+  // =========================
+  // NOT LOGGED IN
+  // =========================
+  if (
+    !user &&
+    (isDashboardRoute || isTeacherRoute)
+  ) {
+    return NextResponse.redirect(
+      new URL('/login', request.url)
+    )
+  }
+
+  // =========================
+  // USER EXISTS
+  // =========================
   if (user) {
-    const isTeacher = user.email === process.env.TEACHER_EMAIL
-    const correctPath = isTeacher ? '/teacher' : '/dashboard'
 
-    // ලොග්වීමේ හෝ මුල් පිටුවේ ඉන්නවා නම් නිවැරදි තැනට යන්න
-    if (pathname === '/login' || pathname === '/') {
-      return NextResponse.redirect(new URL(correctPath, request.url))
+    const email = user.email || ''
+
+    // =========================
+    // CHECK TEACHER
+    // =========================
+    const isTeacher =
+      email === process.env.TEACHER_EMAIL ||
+      (
+        email.includes('@') &&
+        !email.endsWith('@system.com')
+      )
+
+    // =========================
+    // CORRECT PATH
+    // =========================
+    const correctPath = isTeacher
+      ? '/teacher'
+      : '/dashboard'
+
+    // =========================
+    // REDIRECT LOGIN
+    // =========================
+    if (isPublicRoute) {
+
+      return NextResponse.redirect(
+        new URL(correctPath, request.url)
+      )
     }
 
-    // ගුරුවරයෙක් dashboard එකට යන්න ගියොත් teacher panel එකට හරවන්න
-    if (isTeacher && pathname.startsWith('/dashboard')) {
-      return NextResponse.redirect(new URL('/teacher', request.url))
+    // =========================
+    // TEACHER ACCESS
+    // =========================
+    if (
+      isTeacher &&
+      isDashboardRoute
+    ) {
+      return NextResponse.redirect(
+        new URL('/teacher', request.url)
+      )
     }
 
-    // ශිෂ්‍යයෙක් teacher panel එකට යන්න ගියොත් dashboard එකට හරවන්න
-    if (!isTeacher && pathname.startsWith('/teacher')) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+    // =========================
+    // STUDENT ACCESS
+    // =========================
+    if (
+      !isTeacher &&
+      isTeacherRoute
+    ) {
+      return NextResponse.redirect(
+        new URL('/dashboard', request.url)
+      )
     }
   }
 
   return response
 }
 
+// =========================
+// MATCHER
+// =========================
 export const config = {
-  matcher: ['/', '/login', '/dashboard/:path*', '/teacher/:path*'],
+  matcher: [
+    '/',
+    '/login',
+    '/dashboard/:path*',
+    '/teacher/:path*',
+  ],
 }
