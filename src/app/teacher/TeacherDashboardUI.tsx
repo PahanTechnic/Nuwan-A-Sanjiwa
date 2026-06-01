@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import {
   Users, CheckCircle2, Clock, Trophy, FileText, Activity,
   Upload, Download, LogOut, Menu, X, TrendingUp, Medal, Crown, Sparkles, 
-  LayoutDashboard, UserCheck, Search, RefreshCw, Wifi, WifiOff
+  LayoutDashboard, UserCheck, Search, RefreshCw, Wifi, WifiOff, BarChart3
 } from 'lucide-react'
 import Papa from 'papaparse'
 import { cn } from "@/lib/utils"
@@ -100,6 +100,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
   const [isLoggingOut, setLoggingOut] = useState(false)
   const [search, setSearch]       = useState('')
   const [approvingId, setApprovingId] = useState<string | null>(null)
+  const [hoveredBar, setHoveredBar] = useState<string | null>(null)
 
   const [importType, setImportType]     = useState<'marks' | 'students'>('marks')
   const [importStatus, setImportStatus] = useState<string | null>(null)
@@ -107,11 +108,6 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
   const fileRef = useRef<HTMLInputElement>(null)
 
   const supabase = createClient()
-
-  useEffect(() => {
-    console.log("📊 Received Initial Students:", initialStudents);
-    console.log("📊 Received Initial Marks:", initialMarks);
-  }, [initialStudents, initialMarks])
 
   const leaderboard = buildLeaderboard(students, marks)
   const pendingStudents  = students ? students.filter(s => s && !s.approved) : []
@@ -140,6 +136,39 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [])
+
+  // ── Processing Chart Analytics Data ─────────────────────────────────────────
+  const getChartAnalytics = () => {
+    const paperMap: Record<string, { total: number; count: number }> = {}
+    marks.forEach(m => {
+      const name = m.paper_name || m.papers?.paper_name || 'Evaluation'
+      const finalScore = calcTotal(m)
+      if (!paperMap[name]) {
+        paperMap[name] = { total: 0, count: 0 }
+      }
+      paperMap[name].total += finalScore
+      paperMap[name].count += 1
+    })
+
+    const data = Object.keys(paperMap).map(name => ({
+      name,
+      avg: Number((paperMap[name].total / paperMap[name].count).toFixed(1)),
+      submissions: paperMap[name].count
+    }))
+
+    // Default placeholder data if database is empty
+    if (data.length === 0) {
+      return [
+        { name: 'Paper 01', avg: 74, submissions: 12 },
+        { name: 'Paper 02', avg: 62, submissions: 15 },
+        { name: 'Paper 03', avg: 85, submissions: 9 },
+        { name: 'Paper 04', avg: 45, submissions: 20 },
+      ]
+    }
+    return data;
+  }
+
+  const chartData = getChartAnalytics()
 
   const handleApprove = async (s: any) => {
     setApprovingId(s.id)
@@ -223,7 +252,6 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
   ]
 
   return (
-    // Mobile bottom nav එකට ඉඩ තැබීමට pb-28 එකතු කර ඇත
     <div className="min-h-screen bg-white pb-28 sm:pb-0">
       
       {/* ── NAVBAR ── */}
@@ -239,7 +267,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
             </div>
           </div>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-2">
             {desktopTabs.map(t => {
               const Icon = t.icon
@@ -260,18 +288,12 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
               )
             })}
             <div className="mx-2 h-4 w-px bg-slate-200" />
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleLogout} 
-              disabled={isLoggingOut} 
-              className="rounded-full text-rose-600 hover:bg-rose-50 px-4"
-            >
+            <Button variant="ghost" size="sm" onClick={handleLogout} disabled={isLoggingOut} className="rounded-full text-rose-600 hover:bg-rose-50 px-4">
               <LogOut className="h-3.5 w-3.5 mr-2" /> Logout
             </Button>
           </div>
 
-          {/* Realtime Status (Mobile) */}
+          {/* Mobile Right Controls */}
           <div className="md:hidden flex items-center gap-2">
             <span className={cn(
               "p-1.5 rounded-xl border flex items-center justify-center",
@@ -279,21 +301,17 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
             )}>
               {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
             </span>
-            <button
-              className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-rose-600"
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
+            <button className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-rose-600" onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X className="h-4 w-4" /> : <LogOut className="h-4 w-4" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile quick action menu (Logout Confirmation) */}
         {menuOpen && (
-          <div className="md:hidden border-t border-slate-100 px-4 py-3 flex items-center justify-between bg-white animate-in fade-in duration-200">
+          <div className="md:hidden border-t border-slate-100 px-4 py-3 flex items-center justify-between bg-white">
             <span className="text-xs text-slate-400 font-medium">Sign out of your account?</span>
             <Button size="sm" onClick={handleLogout} disabled={isLoggingOut} className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs h-8">
-              {isLoggingOut ? 'Logging out…' : 'Confirm Logout'}
+              Confirm Logout
             </Button>
           </div>
         )}
@@ -304,15 +322,11 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
         <div className="max-w-7xl mx-auto text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
             <p className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-slate-400 mb-1 flex items-center justify-center sm:justify-start gap-1.5">
-              <Sparkles className="h-3 w-3 text-yellow-500 animate-pulse" /> Live Administration
+              <Sparkles className="h-3 w-3 text-yellow-500" /> Live Administration
             </p>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#020617]">
               Hello, <span className="italic">{teacherName}</span>
             </h1>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs font-medium bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm">
-            <span className={cn("h-2 w-2 rounded-full", isOnline ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
-            <span className="text-slate-500">{isOnline ? "Connected to Supabase Realtime" : "Connection Disconnected"}</span>
           </div>
         </div>
       </section>
@@ -323,42 +337,119 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
           
           {/* ══ OVERVIEW TAB ══ */}
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-              {[
-                { label: 'Active Students', value: approvedStudents.length, sub: 'Registered and verified', icon: <Users className="h-4 w-4 sm:h-5 sm:w-5" />, color: 'border-slate-200' },
-                { label: 'Pending Review', value: pendingStudents.length, sub: 'Awaiting authorization', icon: <Clock className="h-4 w-4 sm:h-5 sm:w-5" />, color: pendingStudents.length > 0 ? 'border-amber-300 bg-amber-50/20 text-amber-600' : 'border-slate-200' },
-                { label: 'Total Marks Rows', value: totalMarksRows, sub: 'Imported database logs', icon: <FileText className="h-4 w-4 sm:h-5 sm:w-5" />, color: 'border-slate-200' }
-              ].map((card, i) => (
-                <div key={i} className={cn("border rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex items-start justify-between gap-4 transition-all duration-200 shadow-none", card.color, i === 1 && pendingStudents.length > 0 && "animate-pulse")}>
-                  <div>
-                    <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-widest font-medium truncate">{card.label}</p>
-                    <p className="text-2xl sm:text-5xl font-black text-[#020617] mt-1 sm:mt-2 leading-none">{card.value}</p>
-                    <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-2">{card.sub}</p>
+            <div className="space-y-6 sm:space-y-8">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                {[
+                  { label: 'Active Students', value: approvedStudents.length, sub: 'Registered and verified', icon: <Users className="h-4 w-4 sm:h-5 sm:w-5" /> },
+                  { label: 'Pending Review', value: pendingStudents.length, sub: 'Awaiting authorization', icon: <Clock className="h-4 w-4 sm:h-5 sm:w-5" />, color: pendingStudents.length > 0 ? 'border-amber-300 bg-amber-50/20 text-amber-600' : '' },
+                  { label: 'Total Marks Rows', value: totalMarksRows, sub: 'Imported database logs', icon: <FileText className="h-4 w-4 sm:h-5 sm:w-5" /> }
+                ].map((card, i) => (
+                  <div key={i} className={cn("border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex items-start justify-between gap-4 bg-white", card.color)}>
+                    <div>
+                      <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-widest font-medium truncate">{card.label}</p>
+                      <p className="text-2xl sm:text-5xl font-black text-[#020617] mt-1 sm:mt-2 leading-none">{card.value}</p>
+                      <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-2">{card.sub}</p>
+                    </div>
+                    <div className="h-8 w-8 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl border border-slate-200 flex items-center justify-center text-slate-600 shrink-0 bg-white">
+                      {card.icon}
+                    </div>
                   </div>
-                  <div className="h-8 w-8 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl border border-slate-200 flex items-center justify-center text-slate-600 shrink-0 bg-white">
-                    {card.icon}
+                ))}
+              </div>
+
+              {/* ULTRA-MODERN MINIMALIST ANALYTICS CHART */}
+              <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none overflow-hidden">
+                <CardHeader className="border-b border-slate-100 pb-5">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 text-[#020617]">
+                      <BarChart3 className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg sm:text-xl font-black text-[#020617]">Class Performance Batch Analytics</CardTitle>
+                      <CardDescription className="text-xs">පවත්වන ලද සෑම පරීක්ෂණයකම ශිෂ්‍ය ලකුණු මට්ටම්වල සාමාන්‍යය (Class Average) සජීවීව නිරූපණය වේ.</CardDescription>
+                    </div>
                   </div>
-                </div>
-              ))}
+                </CardHeader>
+                <CardContent className="pt-8 px-4 sm:px-8 pb-6">
+                  
+                  {/* Chart Visualizer */}
+                  <div className="relative h-64 w-full flex flex-col justify-between">
+                    
+                    {/* Background Grid Lines */}
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                      {[100, 75, 50, 25, 0].map((line) => (
+                        <div key={line} className="w-full flex items-center gap-4">
+                          <span className="w-8 text-[10px] font-mono font-bold text-slate-300 text-right">{line}%</span>
+                          <div className="flex-1 border-b border-dashed border-slate-100" />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Bars Grid Section */}
+                    <div className="relative z-10 flex-1 ml-12 flex items-end justify-around h-full pt-2 pb-1">
+                      {chartData.map((item, idx) => (
+                        <div 
+                          key={idx} 
+                          className="relative flex flex-col items-center group h-full justify-end w-full max-w-[60px] sm:max-w-[80px] px-1"
+                          onMouseEnter={() => setHoveredBar(item.name)}
+                          onMouseLeave={() => setHoveredBar(null)}
+                        >
+                          {/* Live Dynamic Floating Tooltip */}
+                          <div className={cn(
+                            "absolute -top-10 z-20 bg-[#020617] text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl shadow-xl transition-all duration-200 pointer-events-none flex flex-col items-center gap-0.5 whitespace-nowrap",
+                            hoveredBar === item.name ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-2 scale-95"
+                          )}>
+                            <span>Avg: {item.avg}%</span>
+                            <span className="text-[8px] text-slate-400 font-normal">{item.submissions} Papers Logged</span>
+                            <div className="w-1.5 h-1.5 bg-[#020617] rotate-45 absolute -bottom-0.5 left-1/2 -translate-x-1/2" />
+                          </div>
+
+                          {/* Interactive Column Bar */}
+                          <div 
+                            className={cn(
+                              "w-full rounded-t-xl transition-all duration-500 ease-out relative overflow-hidden cursor-pointer",
+                              item.avg >= 75 ? "bg-[#020617]" : item.avg >= 50 ? "bg-slate-700" : "bg-slate-400"
+                            )}
+                            style={{ height: `${item.avg}%` }}
+                          >
+                            {/* Modern Highlight Strip Line */}
+                            <div className="absolute inset-x-0 top-0 h-1 bg-white/20" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Chart X-Axis Labels */}
+                  <div className="ml-12 mt-3 flex justify-around border-t border-slate-100 pt-3 text-center">
+                    {chartData.map((item, idx) => (
+                      <div key={idx} className="w-full max-w-[60px] sm:max-w-[80px] px-1 truncate">
+                        <p className="text-[11px] font-bold text-[#020617] truncate">{item.name}</p>
+                        <p className="text-[9px] font-mono font-bold text-emerald-600 mt-0.5">{item.avg}%</p>
+                      </div>
+                    ))}
+                  </div>
+
+                </CardContent>
+              </Card>
             </div>
           )}
 
           {/* ══ STUDENTS TAB ══ */}
           {activeTab === 'students' && (
             <div className="space-y-6">
-              {/* Pending Approvals */}
               {pendingStudents.length > 0 && (
                 <Card className="rounded-2xl sm:rounded-3xl border-amber-200 bg-amber-50/20 shadow-none overflow-hidden">
-                  <CardHeader className="pb-3">
+                  <CardHeader>
                     <CardTitle className="text-amber-900 text-lg sm:text-xl font-black flex items-center gap-2">
                       <UserCheck className="h-5 w-5 text-amber-600" /> Pending Approval Requests
                     </CardTitle>
-                    <CardDescription className="text-amber-700/80 text-xs">Verify student directory records prior to publishing scores.</CardDescription>
                   </CardHeader>
                   <CardContent className="p-0 border-t border-amber-200/50">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm text-slate-600 min-w-[400px]">
-                        <thead className="bg-amber-100/40 text-xs font-bold uppercase tracking-wider text-amber-900 border-b border-amber-200/50">
+                      <table className="w-full text-left text-sm min-w-[400px]">
+                        <thead className="bg-amber-100/40 text-xs font-bold uppercase text-amber-900 border-b">
                           <tr>
                             <th className="px-6 py-3">Student Name</th>
                             <th className="px-6 py-3">Book ID</th>
@@ -367,12 +458,12 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                         </thead>
                         <tbody className="divide-y divide-amber-100/50">
                           {pendingStudents.map(s => (
-                            <tr key={s.id} className="hover:bg-amber-100/20 transition-colors">
+                            <tr key={s.id}>
                               <td className="px-6 py-4 font-bold text-slate-900">{s.name}</td>
                               <td className="px-6 py-4 font-mono text-xs font-bold">{s.student_id}</td>
                               <td className="px-6 py-4 text-right">
-                                <Button size="sm" onClick={() => handleApprove(s)} disabled={approvingId === s.id} className="bg-[#020617] hover:bg-slate-800 text-white rounded-xl text-xs h-9">
-                                  {approvingId === s.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5 mr-1.5" />} Approve
+                                <Button size="sm" onClick={() => handleApprove(s)} disabled={approvingId === s.id} className="bg-[#020617] text-white rounded-xl text-xs h-9">
+                                  {approvingId === s.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : 'Approve'}
                                 </Button>
                               </td>
                             </tr>
@@ -384,22 +475,20 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                 </Card>
               )}
 
-              {/* Active Directory */}
               <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none overflow-hidden">
                 <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b border-slate-100 pb-5">
                   <div>
                     <CardTitle className="text-xl font-black text-[#020617]">Active Directory</CardTitle>
-                    <CardDescription className="text-xs">Authorized students enrolled in Engine with NAS ecosystem.</CardDescription>
                   </div>
                   <div className="relative w-full sm:w-72">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                    <Input placeholder="Search name or ID..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-xl border-slate-200 focus-visible:ring-[#020617] h-9 text-sm" />
+                    <Input placeholder="Search name or ID..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-xl border-slate-200 h-9 text-sm" />
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-600 min-w-[500px]">
-                      <thead className="bg-slate-50 text-xs font-medium uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                    <table className="w-full text-left text-sm min-w-[500px]">
+                      <thead className="bg-slate-50 text-xs tracking-widest text-slate-400 border-b">
                         <tr>
                           <th className="px-6 py-3.5">Student Details</th>
                           <th className="px-6 py-3.5">Book ID</th>
@@ -407,17 +496,13 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredApproved.length === 0 ? (
-                          <tr><td colSpan={3} className="px-6 py-12 text-center text-slate-400 text-xs">No matching active records verified.</td></tr>
-                        ) : (
-                          filteredApproved.map(s => (
-                            <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="px-6 py-4 font-bold text-[#020617]">{s.name}</td>
-                              <td className="px-6 py-4 font-mono text-xs text-slate-500 font-semibold">{s.student_id}</td>
-                              <td className="px-6 py-4 text-slate-600 font-medium">{s.class_name}</td>
-                            </tr>
-                          ))
-                        )}
+                        {filteredApproved.map(s => (
+                          <tr key={s.id} className="hover:bg-slate-50/80">
+                            <td className="px-6 py-4 font-bold text-[#020617]">{s.name}</td>
+                            <td className="px-6 py-4 font-mono text-xs text-slate-500">{s.student_id}</td>
+                            <td className="px-6 py-4 text-slate-600">{s.class_name}</td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
@@ -430,16 +515,12 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
           {activeTab === 'leaderboard' && (
             <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none overflow-hidden">
               <CardHeader className="bg-[#020617] text-white p-6 sm:p-8">
-                <p className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1.5">
-                  <Sparkles className="h-3 w-3 text-yellow-400" /> Top 10 Performance Rankings
-                </p>
                 <CardTitle className="text-xl sm:text-3xl font-black tracking-tight">Cumulative Leaderboard</CardTitle>
-                <CardDescription className="text-slate-400 text-xs">Averages are dynamically calculated based on weighted paper scores & practical assessments.</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-slate-600 min-w-[500px]">
-                    <thead className="bg-slate-50 text-xs font-medium tracking-widest uppercase text-slate-400 border-b">
+                  <table className="w-full text-left text-sm min-w-[500px]">
+                    <thead className="bg-slate-50 text-xs tracking-widest uppercase text-slate-400 border-b">
                       <tr>
                         <th className="w-24 px-6 py-4 text-center">Rank</th>
                         <th className="px-6 py-4">Student Name</th>
@@ -448,25 +529,21 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {leaderboard.length === 0 ? (
-                        <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400 text-xs">No performance parameters logged to calculate rankings.</td></tr>
-                      ) : (
-                        leaderboard.map(e => {
-                          const conf = rankColor(e.rank)
-                          return (
-                            <tr key={e.student_id} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="px-6 py-4 text-center">
-                                <div className={cn("mx-auto flex h-7 w-7 items-center justify-center rounded-xl border font-bold text-xs", conf.bg, conf.text, conf.border)}>
-                                  {rankIcon(e.rank)}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 font-black text-[#020617]">{e.name}</td>
-                              <td className="px-6 py-4 font-mono text-xs text-slate-400">{e.student_id}</td>
-                              <td className="px-6 py-4 text-right font-black text-emerald-600 text-base">{e.avgTotal}%</td>
-                            </tr>
-                          )
-                        })
-                      )}
+                      {leaderboard.map(e => {
+                        const conf = rankColor(e.rank)
+                        return (
+                          <tr key={e.student_id} className="hover:bg-slate-50/50">
+                            <td className="px-6 py-4 text-center">
+                              <div className={cn("mx-auto flex h-7 w-7 items-center justify-center rounded-xl border font-bold text-xs", conf.bg, conf.text, conf.border)}>
+                                {rankIcon(e.rank)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 font-black text-[#020617]">{e.name}</td>
+                            <td className="px-6 py-4 font-mono text-xs text-slate-400">{e.student_id}</td>
+                            <td className="px-6 py-4 text-right font-black text-emerald-600 text-base">{e.avgTotal}%</td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -480,28 +557,26 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
               <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none p-6 sm:p-8 flex flex-col justify-between">
                 <div>
                   <CardTitle className="text-lg sm:text-xl font-black text-[#020617]">Dynamic Data Export</CardTitle>
-                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                    සිසුන්ගේ වත්මන් නාමලේඛනය සහ Book ID ස්වයංක්‍රීයව ඇතුළත් කළ Dynamic CSV ආකෘතිය බාගත කරගන්න. ලකුණු ඇතුලත් කිරීම වඩාත් පහසු කරවයි.
-                  </p>
+                  <p className="text-xs text-slate-400 mt-1.5">සිසුන්ගේ වත්මන් නාමලේඛනය සහ Book ID ස්වයංක්‍රීයව ඇතුළත් කළ Dynamic CSV ආකෘතිය බාගත කරගන්න.</p>
                 </div>
-                <Button onClick={downloadSampleCSV} className="w-full bg-white hover:bg-slate-50 text-[#020617] border border-slate-200 rounded-xl mt-6 font-semibold transition-colors text-xs h-10">
-                  <Download className="h-4 w-4 mr-2 text-slate-500" /> Download Dynamic CSV Matrix
+                <Button onClick={downloadSampleCSV} className="w-full bg-white text-[#020617] border border-slate-200 rounded-xl mt-6 text-xs h-10">
+                  <Download className="h-4 w-4 mr-2" /> Download Dynamic CSV Matrix
                 </Button>
               </Card>
 
               <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none p-6 sm:p-8">
                 <CardTitle className="text-lg sm:text-xl font-black text-[#020617]">Batch Processing Center</CardTitle>
-                <div className="flex gap-1.5 bg-slate-100 p-1 border border-slate-200 rounded-xl mt-3">
-                  <button onClick={() => setImportType('marks')} className={cn("flex-1 rounded-lg py-2 text-xs font-bold transition-all", importType === 'marks' ? 'bg-white text-[#020617] shadow-sm' : 'text-slate-400 hover:text-slate-600')}>Upload Marks</button>
-                  <button onClick={() => setImportType('students')} className={cn("flex-1 rounded-lg py-2 text-xs font-bold transition-all", importType === 'students' ? 'bg-white text-[#020617] shadow-sm' : 'text-slate-400 hover:text-slate-600')}>Upload Directory</button>
+                <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl mt-3">
+                  <button onClick={() => setImportType('marks')} className={cn("flex-1 rounded-lg py-2 text-xs font-bold transition-all", importType === 'marks' ? 'bg-white text-[#020617] shadow-sm' : 'text-slate-400')}>Upload Marks</button>
+                  <button onClick={() => setImportType('students')} className={cn("flex-1 rounded-lg py-2 text-xs font-bold transition-all", importType === 'students' ? 'bg-white text-[#020617] shadow-sm' : 'text-slate-400')}>Upload Directory</button>
                 </div>
                 <div className="rounded-2xl border-2 border-dashed border-slate-200 p-6 text-center mt-4 bg-slate-50/50">
                   <Upload className="h-7 w-7 text-slate-300 mx-auto" />
-                  <label className="mt-4 inline-flex items-center bg-[#020617] hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-xl cursor-pointer shadow-sm transition-colors">
+                  <label className="mt-4 inline-flex items-center bg-[#020617] text-white text-xs font-semibold px-4 py-2.5 rounded-xl cursor-pointer">
                     {importing ? 'Processing Matrix…' : 'Choose CSV Stream'}
                     <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} disabled={importing} />
                   </label>
-                  {importStatus && <div className={cn("mt-3 text-xs font-bold px-3 py-1.5 rounded-lg inline-block", importStatus.includes('✅') ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700')}>{importStatus}</div>}
+                  {importStatus && <div className="mt-3 text-xs font-bold px-3 py-1.5 rounded-lg inline-block">{importStatus}</div>}
                 </div>
               </Card>
             </div>
@@ -509,87 +584,41 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
         </div>
       </section>
 
-      {/* ── MOBILE BOTTOM NAVIGATION (Liquid Glass Morphology) ── */}
-      <nav aria-label="Teacher Primary navigation" className="md:hidden fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300">
+      {/* ── MOBILE NAVIGATION (Liquid Glass) ── */}
+      <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="relative w-full max-w-md">
-          
-          {/* Floating Center Action Button (Leaderboard) */}
           <div className="pointer-events-none absolute inset-x-0 -top-7 z-10 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setActiveTab('leaderboard')}
-              className="group pointer-events-auto flex flex-col items-center outline-none"
-            >
-              <span className="relative flex items-center justify-center">
-                <span className={cn(
-                  "absolute h-16 w-16 rounded-full bg-black/30 blur-xl transition-opacity duration-300 ease-out",
-                  activeTab === 'leaderboard' ? "opacity-100" : "opacity-0 group-hover:opacity-70"
-                )} />
-                <span className={cn(
-                  "relative flex h-16 w-16 items-center justify-center rounded-full transition-all duration-300 ease-out border-4 border-white/70 bg-[#020617] text-white shadow-xl",
-                  activeTab === 'leaderboard' ? "-translate-y-1 scale-105" : "group-hover:-translate-y-0.5 group-hover:scale-105"
-                )}>
-                  <Trophy className="h-6 w-6" strokeWidth={2.5} />
-                </span>
-              </span>
-              <span className={cn("mt-1 text-[10px] tracking-tight font-bold transition-colors", activeTab === 'leaderboard' ? "text-[#020617]" : "text-slate-400")}>
-                Rankings
+            <button type="button" onClick={() => setActiveTab('leaderboard')} className="pointer-events-auto flex flex-col items-center">
+              <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-white/70 bg-[#020617] text-white shadow-xl">
+                <Trophy className="h-6 w-6" />
               </span>
             </button>
           </div>
-
-          {/* Bottom Bar Shell */}
-          <div className="relative flex w-full items-end justify-between gap-1 rounded-[2rem] border border-white/40 bg-white/60 backdrop-blur-xl backdrop-saturate-150 px-3 py-2 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.15),inset_0_1px_0_0_rgba(255,255,255,0.7)]">
-            
-            {/* Left Nav Tabs */}
+          <div className="relative flex w-full items-end justify-between bg-white/60 backdrop-blur-xl px-3 py-2 rounded-[2rem] border border-white/40 shadow-lg">
             <div className="flex flex-1 justify-around">
-              {/* Overview Tab */}
-              <button onClick={() => setActiveTab('overview')} className="group flex flex-col flex-1 items-center gap-1 px-1 outline-none">
-                <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300", activeTab === 'overview' ? "-translate-y-2 bg-[#020617] text-white shadow-lg" : "text-slate-400 hover:text-slate-900")}>
-                  <LayoutDashboard className="h-5 w-5" />
-                </span>
-                <span className={cn("text-[10px] tracking-tight font-medium transition-all", activeTab === 'overview' ? "-translate-y-1 font-bold text-[#020617]" : "text-slate-400")}>Overview</span>
+              <button onClick={() => setActiveTab('overview')} className="flex flex-col items-center gap-1">
+                <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", activeTab === 'overview' ? "bg-[#020617] text-white" : "text-slate-400")}><LayoutDashboard className="h-5 w-5" /></span>
+                <span className="text-[10px]">Overview</span>
               </button>
-
-              {/* Students Tab */}
-              <button onClick={() => setActiveTab('students')} className="group flex flex-col flex-1 items-center gap-1 px-1 outline-none">
-                <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300", activeTab === 'students' ? "-translate-y-2 bg-[#020617] text-white shadow-lg" : "text-slate-400 hover:text-slate-900")}>
-                  <Users className="h-5 w-5" />
-                </span>
-                <span className={cn("text-[10px] tracking-tight font-medium transition-all", activeTab === 'students' ? "-translate-y-1 font-bold text-[#020617]" : "text-slate-400")}>Students</span>
+              <button onClick={() => setActiveTab('students')} className="flex flex-col items-center gap-1">
+                <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", activeTab === 'students' ? "bg-[#020617] text-white" : "text-slate-400")}><Users className="h-5 w-5" /></span>
+                <span className="text-[10px]">Students</span>
               </button>
             </div>
-
-            {/* Middle Spacer for FAB */}
-            <div aria-hidden="true" className="w-16 shrink-0" />
-
-            {/* Right Nav Tabs */}
+            <div className="w-16" />
             <div className="flex flex-1 justify-around">
-              {/* Import Tab */}
-              <button onClick={() => setActiveTab('import')} className="group flex flex-col flex-1 items-center gap-1 px-1 outline-none">
-                <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300", activeTab === 'import' ? "-translate-y-2 bg-[#020617] text-white shadow-lg" : "text-slate-400 hover:text-slate-900")}>
-                  <Upload className="h-5 w-5" />
-                </span>
-                <span className={cn("text-[10px] tracking-tight font-medium transition-all", activeTab === 'import' ? "-translate-y-1 font-bold text-[#020617]" : "text-slate-400")}>Manage</span>
+              <button onClick={() => setActiveTab('import')} className="flex flex-col items-center gap-1">
+                <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", activeTab === 'import' ? "bg-[#020617] text-white" : "text-slate-400")}><Upload className="h-5 w-5" /></span>
+                <span className="text-[10px]">Manage</span>
               </button>
-
-              {/* Refresh Indicators */}
-              <div className="group flex flex-col flex-1 items-center justify-center gap-1 px-1 opacity-40">
-                <span className="flex h-10 w-10 items-center justify-center text-slate-400">
-                  <Activity className="h-5 w-5 animate-pulse" />
-                </span>
-                <span className="text-[10px] tracking-tight font-medium text-slate-400">Live API</span>
+              <div className="flex flex-col items-center justify-center opacity-40">
+                <Activity className="h-5 w-5 text-slate-400 animate-pulse" />
+                <span className="text-[10px]">Live</span>
               </div>
             </div>
-
           </div>
         </div>
       </nav>
-
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-slate-100 py-6 sm:py-8 px-6 text-center text-slate-400 text-xs">
-        © 2026 Engine with NAS. Powered by Engineering Technology Stream Management.
-      </footer>
     </div>
   )
 }
