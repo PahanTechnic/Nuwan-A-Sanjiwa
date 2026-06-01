@@ -13,9 +13,10 @@ import { Input } from '@/components/ui/input'
 import {
   Users, CheckCircle2, Clock, Trophy, FileText, Activity,
   Upload, Download, LogOut, Menu, X, TrendingUp, Medal, Crown, Sparkles, 
-  LayoutDashboard, UserCheck, Search, RefreshCw,
+  LayoutDashboard, UserCheck, Search, RefreshCw, Wifi, WifiOff
 } from 'lucide-react'
 import Papa from 'papaparse'
+import { cn } from "@/lib/utils"
 
 // ── Marking Scheme ────────────────────────────────────────────────────────────
 const MCQ_PER_Q       = 0.7
@@ -40,7 +41,6 @@ function calcTotal(m: any): number {
 
 function buildLeaderboard(students: any[], marks: any[]): any[] {
   const map: Record<string, number[]> = {}
-  
   if (!marks || !Array.isArray(marks)) return [];
 
   marks.forEach(m => {
@@ -76,23 +76,25 @@ function buildLeaderboard(students: any[], marks: any[]): any[] {
 }
 
 function rankColor(rank: number) {
-  if (rank === 1) return { bg: 'rgba(250, 204, 21, 0.15)', text: '#eab308', border: 'border-yellow-200' }
-  if (rank === 2) return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8', border: 'border-slate-200' }
-  if (rank === 3) return { bg: 'rgba(180, 83, 9, 0.15)', text: '#b45309', border: 'border-amber-600' }
+  if (rank === 1) return { bg: 'bg-yellow-500/10', text: 'text-yellow-600', border: 'border-yellow-200' }
+  if (rank === 2) return { bg: 'bg-slate-500/10', text: 'text-slate-500', border: 'border-slate-200' }
+  if (rank === 3) return { bg: 'bg-amber-700/10', text: 'text-amber-700', border: 'border-amber-200' }
   return { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-100' }
 }
 
 function rankIcon(rank: number) {
   if (rank === 1) return <Crown className="h-4 w-4 text-yellow-500 animate-pulse" />
   if (rank === 2) return <Medal className="h-4 w-4 text-slate-400" />
-  if (rank === 3) return <Trophy className="h-4 w-4 text-amber-600" />
+  if (rank === 3) return <Trophy className="h-4 w-4 text-amber-700" />
   return <span className="text-xs font-black text-slate-400">#{rank}</span>
 }
+
+type Tab = 'overview' | 'students' | 'leaderboard' | 'import'
 
 export default function TeacherDashboardUI({ teacherName, initialStudents = [], initialMarks = [], initialPapers = [] }: any) {
   const [students, setStudents]   = useState<any[]>(initialStudents)
   const [marks, setMarks]         = useState<any[]>(initialMarks)
-  const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'leaderboard' | 'import'>('overview')
+  const [activeTab, setActiveTab] = useState<Tab>('overview')
   const [isOnline, setIsOnline]   = useState(true)
   const [menuOpen, setMenuOpen]   = useState(false)
   const [isLoggingOut, setLoggingOut] = useState(false)
@@ -106,7 +108,6 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
 
   const supabase = createClient()
 
-  // 🛠️ DIAGNOSTIC LOGS: පේජ් එක ලෝඩ් වෙනකොට ඩේටා එනවාද නැද්ද බලන්න F12 Console එක බලන්න
   useEffect(() => {
     console.log("📊 Received Initial Students:", initialStudents);
     console.log("📊 Received Initial Marks:", initialMarks);
@@ -207,7 +208,6 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
     window.location.href = '/login'
   }
 
-  // 🛡️ SAFE FILTER: මෙතන තමයි කලින් Crash වෙන්න ඉඩ තිබ්බේ
   const filteredApproved = approvedStudents.filter(s => {
     const studentName = s?.name?.toLowerCase() || '';
     const studentId = s?.student_id?.toLowerCase() || '';
@@ -215,227 +215,381 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
     return studentName.includes(query) || studentId.includes(query);
   });
 
+  const desktopTabs: { id: Tab; label: string; icon: any }[] = [
+    { id: 'overview',    label: 'Overview',        icon: LayoutDashboard },
+    { id: 'students',    label: 'Students',        icon: Users },
+    { id: 'leaderboard', label: 'Top 10 Rank',     icon: Trophy },
+    { id: 'import',      label: 'Data Management', icon: Upload },
+  ]
+
   return (
-    <div className="min-h-screen bg-white">
+    // Mobile bottom nav එකට ඉඩ තැබීමට pb-28 එකතු කර ඇත
+    <div className="min-h-screen bg-white pb-28 sm:pb-0">
+      
       {/* ── NAVBAR ── */}
       <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-9 w-9 items-center justify-between rounded-xl bg-gradient-to-tr from-slate-900 to-slate-800 p-2 text-white shadow-md">
-                <Activity className="h-5 w-5" />
-                <div className="absolute -right-1 -top-1 flex h-3 w-3">
-                  <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${isOnline ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-                  <span className={`relative inline-flex h-3 w-3 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                </div>
-              </div>
-              <div>
-                <span className="block text-sm font-black tracking-tight text-slate-900 sm:text-base">Engine with NAS</span>
-                <span className="block text-[10px] font-medium text-slate-400">Teacher Control Panel</span>
-              </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border border-slate-200 flex items-center justify-center shrink-0">
+              <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
-
-            <div className="hidden md:flex md:items-center md:gap-1">
-              <button onClick={() => setActiveTab('overview')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'overview' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
-                <LayoutDashboard className="h-4 w-4" /> Overview
-              </button>
-              <button onClick={() => setActiveTab('students')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'students' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
-                <Users className="h-4 w-4" /> Students
-              </button>
-              <button onClick={() => setActiveTab('leaderboard')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'leaderboard' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
-                <Trophy className="h-4 w-4" /> Top 10 Rank
-              </button>
-              <button onClick={() => setActiveTab('import')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'import' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
-                <Upload className="h-4 w-4" /> Data Management
-              </button>
-              <div className="mx-2 h-4 w-px bg-slate-200" />
-              <Button variant="ghost" size="sm" onClick={handleLogout} disabled={isLoggingOut} className="rounded-xl text-rose-600 hover:bg-rose-50">
-                <LogOut className="h-4 w-4 mr-2" /> Logout
-              </Button>
+            <div>
+              <p className="font-bold text-sm leading-none text-[#020617]">Engine with NAS</p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Teacher Control Panel</p>
             </div>
           </div>
+
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center gap-2">
+            {desktopTabs.map(t => {
+              const Icon = t.icon
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id)}
+                  className={cn(
+                    "px-4 py-2 rounded-full text-sm font-medium transition-all border whitespace-nowrap flex items-center gap-2",
+                    activeTab === t.id
+                      ? "bg-[#020617] text-white border-[#020617]"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {t.label}
+                </button>
+              )
+            })}
+            <div className="mx-2 h-4 w-px bg-slate-200" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogout} 
+              disabled={isLoggingOut} 
+              className="rounded-full text-rose-600 hover:bg-rose-50 px-4"
+            >
+              <LogOut className="h-3.5 w-3.5 mr-2" /> Logout
+            </Button>
+          </div>
+
+          {/* Realtime Status (Mobile) */}
+          <div className="md:hidden flex items-center gap-2">
+            <span className={cn(
+              "p-1.5 rounded-xl border flex items-center justify-center",
+              isOnline ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-rose-700 bg-rose-50 border-rose-200'
+            )}>
+              {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+            </span>
+            <button
+              className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-rose-600"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              {menuOpen ? <X className="h-4 w-4" /> : <LogOut className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile quick action menu (Logout Confirmation) */}
+        {menuOpen && (
+          <div className="md:hidden border-t border-slate-100 px-4 py-3 flex items-center justify-between bg-white animate-in fade-in duration-200">
+            <span className="text-xs text-slate-400 font-medium">Sign out of your account?</span>
+            <Button size="sm" onClick={handleLogout} disabled={isLoggingOut} className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs h-8">
+              {isLoggingOut ? 'Logging out…' : 'Confirm Logout'}
+            </Button>
+          </div>
+        )}
       </nav>
 
-      {/* ── MAIN BANNER ── */}
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col justify-between gap-4 rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-8 md:flex-row md:items-center">
+      {/* ── HERO BANNER ── */}
+      <section className="px-4 sm:px-6 py-6 sm:py-14 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
+        <div className="max-w-7xl mx-auto text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-              <Sparkles className="h-4 w-4 text-yellow-400" /> Dashboard Live
-            </div>
-            <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Hello, {teacherName}!</h1>
+            <p className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-slate-400 mb-1 flex items-center justify-center sm:justify-start gap-1.5">
+              <Sparkles className="h-3 w-3 text-yellow-500 animate-pulse" /> Live Administration
+            </p>
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#020617]">
+              Hello, <span className="italic">{teacherName}</span>
+            </h1>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-xs font-medium bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm">
+            <span className={cn("h-2 w-2 rounded-full", isOnline ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
+            <span className="text-slate-500">{isOnline ? "Connected to Supabase Realtime" : "Connection Disconnected"}</span>
           </div>
         </div>
+      </section>
 
-        {/* ── TABS ── */}
+      {/* ── MAIN CONTENT AREA ── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         <div className="space-y-8">
+          
+          {/* ══ OVERVIEW TAB ══ */}
           {activeTab === 'overview' && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <Card className="rounded-3xl border border-slate-100 shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-bold text-slate-500 uppercase">Active Students</CardTitle>
-                  <div className="rounded-2xl bg-emerald-50 p-2.5 text-emerald-600"><Users className="h-5 w-5" /></div>
-                </CardHeader>
-                <CardContent><p className="text-3xl font-black text-slate-900">{approvedStudents.length}</p></CardContent>
-              </Card>
-
-              <Card className="rounded-3xl border border-slate-100 shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-bold text-slate-500 uppercase">Pending Review</CardTitle>
-                  <div className="rounded-2xl bg-amber-50 p-2.5 text-amber-600"><Clock className="h-5 w-5" /></div>
-                </CardHeader>
-                <CardContent><p className="text-3xl font-black text-slate-900">{pendingStudents.length}</p></CardContent>
-              </Card>
-
-              <Card className="rounded-3xl border border-slate-100 shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-bold text-slate-500 uppercase">Total Marks Rows</CardTitle>
-                  <div className="rounded-2xl bg-blue-50 p-2.5 text-blue-600"><FileText className="h-5 w-5" /></div>
-                </CardHeader>
-                <CardContent><p className="text-3xl font-black text-slate-900">{totalMarksRows}</p></CardContent>
-              </Card>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+              {[
+                { label: 'Active Students', value: approvedStudents.length, sub: 'Registered and verified', icon: <Users className="h-4 w-4 sm:h-5 sm:w-5" />, color: 'border-slate-200' },
+                { label: 'Pending Review', value: pendingStudents.length, sub: 'Awaiting authorization', icon: <Clock className="h-4 w-4 sm:h-5 sm:w-5" />, color: pendingStudents.length > 0 ? 'border-amber-300 bg-amber-50/20 text-amber-600' : 'border-slate-200' },
+                { label: 'Total Marks Rows', value: totalMarksRows, sub: 'Imported database logs', icon: <FileText className="h-4 w-4 sm:h-5 sm:w-5" />, color: 'border-slate-200' }
+              ].map((card, i) => (
+                <div key={i} className={cn("border rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex items-start justify-between gap-4 transition-all duration-200 shadow-none", card.color, i === 1 && pendingStudents.length > 0 && "animate-pulse")}>
+                  <div>
+                    <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-widest font-medium truncate">{card.label}</p>
+                    <p className="text-2xl sm:text-5xl font-black text-[#020617] mt-1 sm:mt-2 leading-none">{card.value}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-2">{card.sub}</p>
+                  </div>
+                  <div className="h-8 w-8 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl border border-slate-200 flex items-center justify-center text-slate-600 shrink-0 bg-white">
+                    {card.icon}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
+          {/* ══ STUDENTS TAB ══ */}
           {activeTab === 'students' && (
             <div className="space-y-6">
+              {/* Pending Approvals */}
               {pendingStudents.length > 0 && (
-                <Card className="rounded-3xl border-amber-200 bg-amber-50/20">
-                  <CardHeader><CardTitle className="text-amber-800 text-lg font-bold">Approval Requests</CardTitle></CardHeader>
-                  <CardContent className="p-0">
-                    <table className="w-full text-left text-sm text-slate-600">
-                      <thead className="bg-amber-100/50 text-xs font-bold uppercase text-amber-900">
-                        <tr>
-                          <th className="px-6 py-3">Student Name</th>
-                          <th className="px-6 py-3">Book ID</th>
-                          <th className="px-6 py-3 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pendingStudents.map(s => (
-                          <tr key={s.id} className="border-b border-amber-100/50">
-                            <td className="px-6 py-4 font-bold text-slate-900">{s.name}</td>
-                            <td className="px-6 py-4 font-mono">{s.student_id}</td>
-                            <td className="px-6 py-4 text-right">
-                              <Button size="sm" onClick={() => handleApprove(s)} disabled={approvingId === s.id} className="bg-amber-600 text-white rounded-xl">
-                                {approvingId === s.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4 mr-1.5" />} Approve
-                              </Button>
-                            </td>
+                <Card className="rounded-2xl sm:rounded-3xl border-amber-200 bg-amber-50/20 shadow-none overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-amber-900 text-lg sm:text-xl font-black flex items-center gap-2">
+                      <UserCheck className="h-5 w-5 text-amber-600" /> Pending Approval Requests
+                    </CardTitle>
+                    <CardDescription className="text-amber-700/80 text-xs">Verify student directory records prior to publishing scores.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0 border-t border-amber-200/50">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm text-slate-600 min-w-[400px]">
+                        <thead className="bg-amber-100/40 text-xs font-bold uppercase tracking-wider text-amber-900 border-b border-amber-200/50">
+                          <tr>
+                            <th className="px-6 py-3">Student Name</th>
+                            <th className="px-6 py-3">Book ID</th>
+                            <th className="px-6 py-3 text-right">Action</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-amber-100/50">
+                          {pendingStudents.map(s => (
+                            <tr key={s.id} className="hover:bg-amber-100/20 transition-colors">
+                              <td className="px-6 py-4 font-bold text-slate-900">{s.name}</td>
+                              <td className="px-6 py-4 font-mono text-xs font-bold">{s.student_id}</td>
+                              <td className="px-6 py-4 text-right">
+                                <Button size="sm" onClick={() => handleApprove(s)} disabled={approvingId === s.id} className="bg-[#020617] hover:bg-slate-800 text-white rounded-xl text-xs h-9">
+                                  {approvingId === s.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5 mr-1.5" />} Approve
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </CardContent>
                 </Card>
               )}
 
-              <Card className="rounded-3xl border border-slate-100 overflow-hidden">
-                <CardHeader className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                  <CardTitle className="text-xl font-black text-slate-900">Active Directory</CardTitle>
+              {/* Active Directory */}
+              <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none overflow-hidden">
+                <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b border-slate-100 pb-5">
+                  <div>
+                    <CardTitle className="text-xl font-black text-[#020617]">Active Directory</CardTitle>
+                    <CardDescription className="text-xs">Authorized students enrolled in Engine with NAS ecosystem.</CardDescription>
+                  </div>
                   <div className="relative w-full sm:w-72">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                    <Input placeholder="Search name or ID..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-xl border-slate-200" />
+                    <Input placeholder="Search name or ID..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-xl border-slate-200 focus-visible:ring-[#020617] h-9 text-sm" />
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500">
-                      <tr>
-                        <th className="px-6 py-3">Student Details</th>
-                        <th className="px-6 py-3">Book ID</th>
-                        <th className="px-6 py-3">Class</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredApproved.length === 0 ? (
-                        <tr><td colSpan={3} className="px-6 py-12 text-center text-slate-400">No active students found.</td></tr>
-                      ) : (
-                        filteredApproved.map(s => (
-                          <tr key={s.id}>
-                            <td className="px-6 py-4 font-bold text-slate-900">{s.name}</td>
-                            <td className="px-6 py-4 font-mono text-xs">{s.student_id}</td>
-                            <td className="px-6 py-4">{s.class_name}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-slate-600 min-w-[500px]">
+                      <thead className="bg-slate-50 text-xs font-medium uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-3.5">Student Details</th>
+                          <th className="px-6 py-3.5">Book ID</th>
+                          <th className="px-6 py-3.5">Class</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredApproved.length === 0 ? (
+                          <tr><td colSpan={3} className="px-6 py-12 text-center text-slate-400 text-xs">No matching active records verified.</td></tr>
+                        ) : (
+                          filteredApproved.map(s => (
+                            <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="px-6 py-4 font-bold text-[#020617]">{s.name}</td>
+                              <td className="px-6 py-4 font-mono text-xs text-slate-500 font-semibold">{s.student_id}</td>
+                              <td className="px-6 py-4 text-slate-600 font-medium">{s.class_name}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </CardContent>
               </Card>
             </div>
           )}
 
+          {/* ══ LEADERBOARD TAB ══ */}
           {activeTab === 'leaderboard' && (
-            <Card className="rounded-3xl border border-slate-100 overflow-hidden">
-              <CardHeader className="bg-slate-900 text-white p-6">
-                <CardTitle className="text-2xl font-black">Top 10 Performance Leaderboard</CardTitle>
+            <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none overflow-hidden">
+              <CardHeader className="bg-[#020617] text-white p-6 sm:p-8">
+                <p className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3 text-yellow-400" /> Top 10 Performance Rankings
+                </p>
+                <CardTitle className="text-xl sm:text-3xl font-black tracking-tight">Cumulative Leaderboard</CardTitle>
+                <CardDescription className="text-slate-400 text-xs">Averages are dynamically calculated based on weighted paper scores & practical assessments.</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                <table className="w-full text-left text-sm text-slate-600">
-                  <thead className="bg-slate-50 text-xs font-bold text-slate-500 border-b">
-                    <tr>
-                      <th className="w-20 px-6 py-4 text-center">Rank</th>
-                      <th className="px-6 py-4">Student Name</th>
-                      <th className="px-6 py-4 text-right">Avg Score</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {leaderboard.length === 0 ? (
-                      <tr><td colSpan={3} className="px-6 py-12 text-center text-slate-400">No marks recorded yet.</td></tr>
-                    ) : (
-                      leaderboard.map(e => {
-                        const conf = rankColor(e.rank)
-                        return (
-                          <tr key={e.student_id}>
-                            <td className="px-6 py-4 text-center">
-                              <div className={`mx-auto flex h-7 w-7 items-center justify-center rounded-xl border ${conf.bg} ${conf.text} ${conf.border} font-bold`}>
-                                {rankIcon(e.rank)}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 font-black text-slate-900">{e.name}</td>
-                            <td className="px-6 py-4 text-right font-black text-emerald-600">{e.avgTotal}%</td>
-                          </tr>
-                        )
-                      })
-                    )}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-slate-600 min-w-[500px]">
+                    <thead className="bg-slate-50 text-xs font-medium tracking-widest uppercase text-slate-400 border-b">
+                      <tr>
+                        <th className="w-24 px-6 py-4 text-center">Rank</th>
+                        <th className="px-6 py-4">Student Name</th>
+                        <th className="px-6 py-4">Book ID</th>
+                        <th className="px-6 py-4 text-right">Avg Cumulative Score</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {leaderboard.length === 0 ? (
+                        <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400 text-xs">No performance parameters logged to calculate rankings.</td></tr>
+                      ) : (
+                        leaderboard.map(e => {
+                          const conf = rankColor(e.rank)
+                          return (
+                            <tr key={e.student_id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="px-6 py-4 text-center">
+                                <div className={cn("mx-auto flex h-7 w-7 items-center justify-center rounded-xl border font-bold text-xs", conf.bg, conf.text, conf.border)}>
+                                  {rankIcon(e.rank)}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 font-black text-[#020617]">{e.name}</td>
+                              <td className="px-6 py-4 font-mono text-xs text-slate-400">{e.student_id}</td>
+                              <td className="px-6 py-4 text-right font-black text-emerald-600 text-base">{e.avgTotal}%</td>
+                            </tr>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
           )}
 
+          {/* ══ DATA MANAGEMENT TAB ══ */}
           {activeTab === 'import' && (
             <div className="grid gap-6 md:grid-cols-2">
-              <Card className="rounded-3xl border border-slate-100 p-6 flex flex-col justify-between">
+              <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none p-6 sm:p-8 flex flex-col justify-between">
                 <div>
-                  <CardTitle className="text-xl font-black">Download Template</CardTitle>
-                  <p className="text-sm text-slate-500 mt-2">සිසුන්ගේ නම් සහ Book ID ස්වයංක්‍රීයව ඇතුළත් කළ Dynamic CSV එක ලබාගන්න.</p>
+                  <CardTitle className="text-lg sm:text-xl font-black text-[#020617]">Dynamic Data Export</CardTitle>
+                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                    සිසුන්ගේ වත්මන් නාමලේඛනය සහ Book ID ස්වයංක්‍රීයව ඇතුළත් කළ Dynamic CSV ආකෘතිය බාගත කරගන්න. ලකුණු ඇතුලත් කිරීම වඩාත් පහසු කරවයි.
+                  </p>
                 </div>
-                <Button onClick={downloadSampleCSV} className="w-full bg-slate-900 text-white rounded-2xl mt-4">
-                  <Download className="h-4 w-4 mr-2" /> Get Dynamic Sample CSV
+                <Button onClick={downloadSampleCSV} className="w-full bg-white hover:bg-slate-50 text-[#020617] border border-slate-200 rounded-xl mt-6 font-semibold transition-colors text-xs h-10">
+                  <Download className="h-4 w-4 mr-2 text-slate-500" /> Download Dynamic CSV Matrix
                 </Button>
               </Card>
 
-              <Card className="rounded-3xl border border-slate-100 p-6">
-                <CardTitle className="text-xl font-black">Upload CSV File</CardTitle>
-                <div className="flex gap-2 bg-slate-50 p-1 border rounded-2xl mt-2">
-                  <button onClick={() => setImportType('marks')} className={`flex-1 rounded-xl py-2 text-xs font-bold ${importType === 'marks' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Marks</button>
-                  <button onClick={() => setImportType('students')} className={`flex-1 rounded-xl py-2 text-xs font-bold ${importType === 'students' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Students</button>
+              <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none p-6 sm:p-8">
+                <CardTitle className="text-lg sm:text-xl font-black text-[#020617]">Batch Processing Center</CardTitle>
+                <div className="flex gap-1.5 bg-slate-100 p-1 border border-slate-200 rounded-xl mt-3">
+                  <button onClick={() => setImportType('marks')} className={cn("flex-1 rounded-lg py-2 text-xs font-bold transition-all", importType === 'marks' ? 'bg-white text-[#020617] shadow-sm' : 'text-slate-400 hover:text-slate-600')}>Upload Marks</button>
+                  <button onClick={() => setImportType('students')} className={cn("flex-1 rounded-lg py-2 text-xs font-bold transition-all", importType === 'students' ? 'bg-white text-[#020617] shadow-sm' : 'text-slate-400 hover:text-slate-600')}>Upload Directory</button>
                 </div>
-                <div className="rounded-2xl border-2 border-dashed p-6 text-center mt-4">
-                  <Upload className="h-8 w-8 text-slate-300 mx-auto" />
-                  <label className="mt-4 inline-flex items-center bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer">
-                    {importing ? 'Importing…' : 'Choose CSV File'}
+                <div className="rounded-2xl border-2 border-dashed border-slate-200 p-6 text-center mt-4 bg-slate-50/50">
+                  <Upload className="h-7 w-7 text-slate-300 mx-auto" />
+                  <label className="mt-4 inline-flex items-center bg-[#020617] hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-xl cursor-pointer shadow-sm transition-colors">
+                    {importing ? 'Processing Matrix…' : 'Choose CSV Stream'}
                     <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} disabled={importing} />
                   </label>
-                  {importStatus && <div className="mt-2 text-xs font-bold">{importStatus}</div>}
+                  {importStatus && <div className={cn("mt-3 text-xs font-bold px-3 py-1.5 rounded-lg inline-block", importStatus.includes('✅') ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700')}>{importStatus}</div>}
                 </div>
               </Card>
             </div>
           )}
         </div>
       </section>
+
+      {/* ── MOBILE BOTTOM NAVIGATION (Liquid Glass Morphology) ── */}
+      <nav aria-label="Teacher Primary navigation" className="md:hidden fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300">
+        <div className="relative w-full max-w-md">
+          
+          {/* Floating Center Action Button (Leaderboard) */}
+          <div className="pointer-events-none absolute inset-x-0 -top-7 z-10 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setActiveTab('leaderboard')}
+              className="group pointer-events-auto flex flex-col items-center outline-none"
+            >
+              <span className="relative flex items-center justify-center">
+                <span className={cn(
+                  "absolute h-16 w-16 rounded-full bg-black/30 blur-xl transition-opacity duration-300 ease-out",
+                  activeTab === 'leaderboard' ? "opacity-100" : "opacity-0 group-hover:opacity-70"
+                )} />
+                <span className={cn(
+                  "relative flex h-16 w-16 items-center justify-center rounded-full transition-all duration-300 ease-out border-4 border-white/70 bg-[#020617] text-white shadow-xl",
+                  activeTab === 'leaderboard' ? "-translate-y-1 scale-105" : "group-hover:-translate-y-0.5 group-hover:scale-105"
+                )}>
+                  <Trophy className="h-6 w-6" strokeWidth={2.5} />
+                </span>
+              </span>
+              <span className={cn("mt-1 text-[10px] tracking-tight font-bold transition-colors", activeTab === 'leaderboard' ? "text-[#020617]" : "text-slate-400")}>
+                Rankings
+              </span>
+            </button>
+          </div>
+
+          {/* Bottom Bar Shell */}
+          <div className="relative flex w-full items-end justify-between gap-1 rounded-[2rem] border border-white/40 bg-white/60 backdrop-blur-xl backdrop-saturate-150 px-3 py-2 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.15),inset_0_1px_0_0_rgba(255,255,255,0.7)]">
+            
+            {/* Left Nav Tabs */}
+            <div className="flex flex-1 justify-around">
+              {/* Overview Tab */}
+              <button onClick={() => setActiveTab('overview')} className="group flex flex-col flex-1 items-center gap-1 px-1 outline-none">
+                <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300", activeTab === 'overview' ? "-translate-y-2 bg-[#020617] text-white shadow-lg" : "text-slate-400 hover:text-slate-900")}>
+                  <LayoutDashboard className="h-5 w-5" />
+                </span>
+                <span className={cn("text-[10px] tracking-tight font-medium transition-all", activeTab === 'overview' ? "-translate-y-1 font-bold text-[#020617]" : "text-slate-400")}>Overview</span>
+              </button>
+
+              {/* Students Tab */}
+              <button onClick={() => setActiveTab('students')} className="group flex flex-col flex-1 items-center gap-1 px-1 outline-none">
+                <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300", activeTab === 'students' ? "-translate-y-2 bg-[#020617] text-white shadow-lg" : "text-slate-400 hover:text-slate-900")}>
+                  <Users className="h-5 w-5" />
+                </span>
+                <span className={cn("text-[10px] tracking-tight font-medium transition-all", activeTab === 'students' ? "-translate-y-1 font-bold text-[#020617]" : "text-slate-400")}>Students</span>
+              </button>
+            </div>
+
+            {/* Middle Spacer for FAB */}
+            <div aria-hidden="true" className="w-16 shrink-0" />
+
+            {/* Right Nav Tabs */}
+            <div className="flex flex-1 justify-around">
+              {/* Import Tab */}
+              <button onClick={() => setActiveTab('import')} className="group flex flex-col flex-1 items-center gap-1 px-1 outline-none">
+                <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300", activeTab === 'import' ? "-translate-y-2 bg-[#020617] text-white shadow-lg" : "text-slate-400 hover:text-slate-900")}>
+                  <Upload className="h-5 w-5" />
+                </span>
+                <span className={cn("text-[10px] tracking-tight font-medium transition-all", activeTab === 'import' ? "-translate-y-1 font-bold text-[#020617]" : "text-slate-400")}>Manage</span>
+              </button>
+
+              {/* Refresh Indicators */}
+              <div className="group flex flex-col flex-1 items-center justify-center gap-1 px-1 opacity-40">
+                <span className="flex h-10 w-10 items-center justify-center text-slate-400">
+                  <Activity className="h-5 w-5 animate-pulse" />
+                </span>
+                <span className="text-[10px] tracking-tight font-medium text-slate-400">Live API</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </nav>
+
+      {/* ── FOOTER ── */}
+      <footer className="border-t border-slate-100 py-6 sm:py-8 px-6 text-center text-slate-400 text-xs">
+        © 2026 Engine with NAS. Powered by Engineering Technology Stream Management.
+      </footer>
     </div>
   )
 }
