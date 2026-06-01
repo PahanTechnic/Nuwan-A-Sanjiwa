@@ -183,27 +183,28 @@ export default function AIChatPanel({
   const isEmpty = messages.length === 0
 
   return (
-    <div className="flex flex-col h-[600px] max-h-[70vh] overflow-hidden">
+    // Changed fixed height to h-full so it fits perfectly inside the parent Sheet
+    <div className="flex flex-col h-full w-full overflow-hidden">
 
       {/* ── Welcome banner (shown when no messages) ── */}
       {isEmpty && (
         <div className="flex-1 overflow-y-auto flex flex-col items-center justify-start px-4 py-6 gap-5">
 
           {/* Icon */}
-          <div className="h-16 w-16 rounded-3xl border border-slate-200 bg-white shadow-sm flex items-center justify-center">
+          <div className="h-16 w-16 rounded-3xl border border-slate-200 bg-white/50 shadow-sm flex items-center justify-center">
             <Brain className="h-7 w-7 text-slate-700" />
           </div>
 
           <div className="text-center max-w-sm">
             <h2 className="text-2xl font-black text-[#020617]">AI Study Assistant</h2>
-            <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
               Engineering Technology A/L syllabus target කරගත් AI assistant. ඔයාගේ marks data analyze කරලා personalized advice දෙනවා.
             </p>
           </div>
 
           {/* Weak areas pill */}
           {weakAreas.length > 0 && (
-            <div className="w-full max-w-sm border border-amber-200 bg-amber-50 rounded-2xl p-4">
+            <div className="w-full max-w-sm border border-amber-200/60 bg-amber-50/80 backdrop-blur-sm rounded-2xl p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                 <div>
@@ -223,7 +224,7 @@ export default function AIChatPanel({
               <button
                 key={p}
                 onClick={() => sendMessage(p)}
-                className="w-full text-left text-sm px-4 py-3 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                className="w-full text-left text-sm px-4 py-3 rounded-2xl border border-slate-200/60 bg-white/40 text-slate-700 hover:bg-white hover:border-slate-300 transition-colors"
               >
                 {p}
               </button>
@@ -234,18 +235,18 @@ export default function AIChatPanel({
 
       {/* ── Message list ── */}
       {!isEmpty && (
-        <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-3 space-y-4 scroll-smooth">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 scroll-smooth">
           {messages.map(msg => (
             <div key={msg.id} className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
 
               {/* Assistant avatar */}
               {msg.role === 'assistant' && (
-                <div className="h-8 w-8 rounded-xl border border-slate-200 bg-white flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-8 w-8 rounded-xl border border-slate-200 bg-white/80 flex items-center justify-center shrink-0 mt-0.5">
                   <Brain className="h-3.5 w-3.5 text-slate-600" />
                 </div>
               )}
 
-              <div className={`max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+              <div className={`max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
 
                 {/* Image preview */}
                 {msg.imagePreview && (
@@ -259,8 +260,8 @@ export default function AIChatPanel({
                 {/* Bubble */}
                 <div className={`rounded-3xl px-4 py-3 ${
                   msg.role === 'user'
-                    ? 'bg-[#020617] text-white rounded-br-md'
-                    : 'bg-slate-50 border border-slate-200 rounded-bl-md'
+                    ? 'bg-[#020617] text-white rounded-br-md shadow-sm'
+                    : 'bg-white/80 border border-slate-200/60 rounded-bl-md shadow-sm backdrop-blur-sm'
                 }`}>
                   {msg.role === 'user' ? (
                     <p className="text-sm leading-relaxed">{msg.content}</p>
@@ -288,7 +289,7 @@ export default function AIChatPanel({
 
       {/* ── Error banner ── */}
       {error && (
-        <div className="mx-1 mb-2 flex items-center gap-2 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-2.5">
+        <div className="mx-4 mb-2 flex items-center gap-2 bg-rose-50/90 border border-rose-200 rounded-2xl px-4 py-2.5 backdrop-blur-sm">
           <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
           <p className="text-xs text-rose-700 flex-1">{error}</p>
           <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-600">
@@ -298,7 +299,7 @@ export default function AIChatPanel({
       )}
 
       {/* ── Input area ── */}
-      <div className="border-t border-slate-100 pt-3 mt-auto shrink-0">
+      <div className="border-t border-slate-200/50 pt-3 px-4 pb-4 mt-auto shrink-0 bg-white/30 backdrop-blur-md rounded-b-[2rem]">
 
         {/* Image preview strip */}
         {pendingImage && (
@@ -316,7 +317,7 @@ export default function AIChatPanel({
                 <X className="h-2.5 w-2.5" />
               </button>
             </div>
-            <p className="text-xs text-slate-400">Past paper image ready to send</p>
+            <p className="text-xs text-slate-500">Past paper image ready to send</p>
           </div>
         )}
 
@@ -327,7 +328,7 @@ export default function AIChatPanel({
           <button
             onClick={() => fileRef.current?.click()}
             disabled={isLoading}
-            className="h-11 w-11 shrink-0 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors disabled:opacity-40"
+            className="h-11 w-11 shrink-0 rounded-2xl border border-slate-300 bg-white/70 flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-800 transition-colors disabled:opacity-40 shadow-sm"
             title="Upload past paper image"
           >
             <ImagePlus className="h-4 w-4" />
@@ -349,7 +350,7 @@ export default function AIChatPanel({
             disabled={isLoading}
             rows={1}
             placeholder="Ask anything about your papers or A/L syllabus…"
-            className="flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm text-[#020617] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-300 disabled:opacity-50 min-h-[44px] max-h-[120px] transition-shadow"
+            className="flex-1 resize-none rounded-2xl border border-slate-300 bg-white/70 px-4 py-3 text-sm text-[#020617] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-400 disabled:opacity-50 min-h-[44px] max-h-[120px] transition-shadow shadow-sm"
             style={{ height: 'auto' }}
             onInput={e => {
               const t = e.currentTarget
@@ -362,7 +363,7 @@ export default function AIChatPanel({
           <button
             onClick={() => sendMessage()}
             disabled={isLoading || (!input.trim() && !pendingImage)}
-            className="h-11 w-11 shrink-0 rounded-2xl bg-[#020617] text-white flex items-center justify-center hover:bg-slate-800 transition-colors disabled:opacity-40"
+            className="h-11 w-11 shrink-0 rounded-2xl bg-[#020617] text-white flex items-center justify-center hover:bg-slate-800 transition-colors disabled:opacity-40 shadow-sm"
           >
             {isLoading
               ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -371,8 +372,8 @@ export default function AIChatPanel({
           </button>
         </div>
 
-        <p className="text-xs text-slate-400 mt-2 text-center">
-          Enter to send · Shift+Enter for new line · Chat history saved automatically
+        <p className="text-xs text-slate-500 mt-2 text-center">
+          Enter to send · Shift+Enter for new line
         </p>
       </div>
     </div>

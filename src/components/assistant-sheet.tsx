@@ -22,7 +22,6 @@ const SUGGESTIONS = [
 export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetProps) {
   const [mounted, setMounted] = useState(false)
   const [started, setStarted] = useState(false)
-  const [initialPrompt, setInitialPrompt] = useState<string | undefined>()
 
   // Keep node mounted briefly so exit transition can play
   useEffect(() => {
@@ -33,7 +32,6 @@ export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetPro
     const t = setTimeout(() => {
       setMounted(false)
       setStarted(false)
-      setInitialPrompt(undefined)
     }, 350)
     return () => clearTimeout(t)
   }, [open])
@@ -55,7 +53,6 @@ export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetPro
   }, [open, onClose])
 
   const handleSuggestion = (text: string) => {
-    setInitialPrompt(text)
     setStarted(true)
   }
 
@@ -76,33 +73,48 @@ export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetPro
         )}
       />
 
-      {/* Sheet */}
+      {/* ── MOBILE: bottom sheet / DESKTOP: right side floating panel ── */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="AI Assistant"
         className={cn(
-          "absolute inset-x-0 bottom-0 mx-auto flex h-[90dvh] max-w-md flex-col",
-          "rounded-t-[2rem] border border-white/40 bg-white/90 backdrop-blur-2xl backdrop-saturate-150",
+          "absolute flex flex-col",
+          // ── Adjusted Glassmorphism Look (Less transparent, less blurry) ──
+          "border border-white/60 bg-white/85 backdrop-blur-xl backdrop-saturate-100",
+          // ── MOBILE styles (default) ───────────────────────────────────
+          "inset-x-0 bottom-0 mx-auto h-[90dvh] max-w-md",
+          "rounded-t-[2rem]",
           "shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.35),inset_0_1px_0_0_rgba(255,255,255,0.8)]",
-          "transition-transform duration-350 ease-out will-change-transform",
-          open ? "translate-y-0" : "translate-y-full",
+          // ── DESKTOP overrides (sm:) ───────────────────────────────────
+          // Right floating panel: 4 units from right, top, and bottom
+          "sm:inset-x-auto sm:inset-y-4 sm:right-4 sm:bottom-4 sm:top-4",
+          "sm:h-[calc(100vh-2rem)] sm:w-[420px] sm:max-w-[420px]",
+          // Full rounded corners for floating look
+          "sm:rounded-[2rem]", 
+          "sm:shadow-[-16px_16px_48px_-12px_rgba(0,0,0,0.22),inset_1px_1px_0_0_rgba(255,255,255,0.8)]",
+          // ── Transition ────────────────────────────────────────────────
+          "transition-transform duration-300 ease-out will-change-transform",
+          // mobile: slide up ↑  |  desktop: slide in from right →
+          open
+            ? "translate-y-0 sm:translate-x-0"
+            : "translate-y-full sm:translate-y-0 sm:translate-x-[110%]", // move fully off-screen right
         )}
       >
-        {/* Grab handle */}
-        <div className="flex justify-center pt-3 shrink-0">
+        {/* Grab handle — mobile only */}
+        <div className="flex justify-center pt-3 shrink-0 sm:hidden">
           <span className="h-1.5 w-10 rounded-full bg-neutral-300" aria-hidden="true" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pb-3 pt-3 shrink-0 border-b border-neutral-100">
+        <div className="flex items-center justify-between px-5 pb-3 pt-3 sm:pt-5 shrink-0 border-b border-neutral-200/50">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.5)]">
               <Sparkles className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
             </span>
             <div>
               <h2 className="text-sm font-semibold leading-tight tracking-tight text-black">AI Study Assistant</h2>
-              <p className="text-xs font-medium text-neutral-400">
+              <p className="text-xs font-medium text-neutral-500">
                 {aiPanelData ? `Hi ${aiPanelData.studentName.split(" ")[0]} 👋` : "Always here to help"}
               </p>
             </div>
@@ -111,7 +123,7 @@ export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetPro
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition-colors duration-200 hover:bg-neutral-100 hover:text-black"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition-colors duration-200 hover:bg-neutral-200 hover:text-black"
           >
             <X className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
           </button>
@@ -133,19 +145,19 @@ export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetPro
                   Ask me anything about your papers, practicals, or exam tips.
                 </p>
 
-                {/* Quick stats if data available */}
+                {/* Quick stats */}
                 {aiPanelData && (
                   <div className="flex items-center gap-3 mt-1">
-                    <div className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-center">
-                      <p className="text-xs text-neutral-400">Avg Score</p>
+                    <div className="rounded-xl border border-neutral-200 bg-white/90 px-3 py-2 text-center backdrop-blur-sm">
+                      <p className="text-xs text-neutral-500">Avg Score</p>
                       <p className="text-lg font-black text-black">{aiPanelData.avgTotal}</p>
                     </div>
-                    <div className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-center">
-                      <p className="text-xs text-neutral-400">MCQ Avg</p>
+                    <div className="rounded-xl border border-neutral-200 bg-white/90 px-3 py-2 text-center backdrop-blur-sm">
+                      <p className="text-xs text-neutral-500">MCQ Avg</p>
                       <p className="text-lg font-black text-black">{aiPanelData.avgMcqPct}%</p>
                     </div>
-                    <div className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-center">
-                      <p className="text-xs text-neutral-400">Papers</p>
+                    <div className="rounded-xl border border-neutral-200 bg-white/90 px-3 py-2 text-center backdrop-blur-sm">
+                      <p className="text-xs text-neutral-500">Papers</p>
                       <p className="text-lg font-black text-black">{aiPanelData.papers.length}</p>
                     </div>
                   </div>
@@ -160,8 +172,8 @@ export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetPro
                     type="button"
                     onClick={() => handleSuggestion(s)}
                     className={cn(
-                      "flex items-center justify-between rounded-2xl border border-neutral-200 bg-white/60 px-4 py-3 text-left",
-                      "text-sm font-medium text-black transition-all duration-200 hover:border-black hover:bg-white active:scale-[0.98]",
+                      "flex items-center justify-between rounded-2xl border border-neutral-200 bg-white/70 px-4 py-3 text-left",
+                      "text-sm font-medium text-black transition-all duration-200 hover:border-black/30 hover:bg-white active:scale-[0.98]",
                     )}
                   >
                     <span>{s}</span>
@@ -181,7 +193,7 @@ export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetPro
             </div>
           ) : (
             /* Full AIChatPanel */
-            <div className="flex-1 overflow-hidden min-h-0 px-2 pb-2">
+            <div className="flex-1 overflow-hidden min-h-0 pb-2">
               {aiPanelData ? (
                 <AIChatPanel
                   studentName={aiPanelData.studentName}
