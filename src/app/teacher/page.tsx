@@ -2,7 +2,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import TeacherUploadPanel from './UploadPanel'
+import TeacherDashboardUI from './TeacherDashboardUI'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +20,7 @@ export default async function TeacherPage() {
     .select('*')
     .eq('approved', false)
 
-  if (error) console.error("Error fetching pending students:", error.message)
+  if (error) console.error('Error fetching pending students:', error.message)
 
-  return <TeacherUploadPanel pendingStudents={pendingStudents || []} />
+  return <TeacherDashboardUI pendingStudents={pendingStudents || []} />
 }
