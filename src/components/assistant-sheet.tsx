@@ -76,38 +76,26 @@ export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetPro
         )}
       />
 
-      {/* Sheet — bottom on mobile, right side panel on desktop */}
+      {/* Sheet */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="AI Assistant"
         className={cn(
-          // ── Mobile: bottom sheet ──────────────────────────────────────
-          "absolute inset-x-0 bottom-0 mx-auto flex flex-col",
-          "h-[90dvh] max-w-md",
-          "rounded-t-[2rem]",
-          "sm:rounded-t-none sm:rounded-l-[2rem]",
-          // ── Desktop: right side panel ─────────────────────────────────
-          "sm:inset-x-auto sm:inset-y-0 sm:right-0 sm:bottom-auto",
-          "sm:h-full sm:max-w-[420px] sm:w-[420px]",
-          // ── Shared styles ─────────────────────────────────────────────
-          "flex flex-col",
-          "border border-white/40 bg-white/90 backdrop-blur-2xl backdrop-saturate-150",
+          "absolute inset-x-0 bottom-0 mx-auto flex h-[90dvh] max-w-md flex-col",
+          "rounded-t-[2rem] border border-white/40 bg-white/90 backdrop-blur-2xl backdrop-saturate-150",
           "shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.35),inset_0_1px_0_0_rgba(255,255,255,0.8)]",
-          "sm:shadow-[-12px_0_40px_-12px_rgba(0,0,0,0.25),inset_1px_0_0_0_rgba(255,255,255,0.8)]",
-          // ── Transitions ───────────────────────────────────────────────
           "transition-transform duration-350 ease-out will-change-transform",
-          // mobile: slide up/down
-          open ? "translate-y-0 sm:translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full",
+          open ? "translate-y-0" : "translate-y-full",
         )}
       >
-        {/* Grab handle — mobile only */}
-        <div className="flex justify-center pt-3 shrink-0 sm:hidden">
+        {/* Grab handle */}
+        <div className="flex justify-center pt-3 shrink-0">
           <span className="h-1.5 w-10 rounded-full bg-neutral-300" aria-hidden="true" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pb-3 pt-3 sm:pt-5 shrink-0 border-b border-neutral-100">
+        <div className="flex items-center justify-between px-5 pb-3 pt-3 shrink-0 border-b border-neutral-100">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.5)]">
               <Sparkles className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
@@ -205,7 +193,6 @@ export function AssistantSheet({ open, onClose, aiPanelData }: AssistantSheetPro
                   avgStrPct={aiPanelData.avgStrPct}
                   avgEssPct={aiPanelData.avgEssPct}
                   papers={aiPanelData.papers}
-                  initialMessage={initialPrompt}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-neutral-400">
