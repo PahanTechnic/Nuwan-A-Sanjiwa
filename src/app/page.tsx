@@ -1,127 +1,351 @@
 // src/app/page.tsx
 import Link from 'next/link'
-import { Noto_Serif_Sinhala, Noto_Sans_Sinhala } from 'next/font/google'
-import Navbar from '@/components/Navbar' // 💡 අපි හදපු Navbar එක Import කරනවා
+import { Activity, Trophy, TrendingUp, ShieldCheck, ArrowRight, BookOpen, Users, BarChart3 } from 'lucide-react'
+import type { Metadata } from 'next'
 
-// Fonts setup - Standard Google Fonts for Sinhala
-const notoSansSinhala = Noto_Sans_Sinhala({
-  subsets: ['sinhala'],
-  weight: ['400', '700'],
-  variable: '--font-noto-sans',
-})
+export const metadata: Metadata = {
+  title: 'Nuwan A. Sanjeewa | Best A/L Engineering Technology Class — Kegalle Sri Lanka',
+  description:
+    'Engine with NAS — Nuwan A. Sanjeewa ගේ A/L Engineering Technology class. Kegalle district rank #1 ET class. Real-time student marks, leaderboard & progress analytics.',
+}
 
-const notoSerifSinhala = Noto_Serif_Sinhala({
-  subsets: ['sinhala'],
-  weight: ['400', '700'],
-  variable: '--font-noto-serif',
-})
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'EducationalOrganization',
+  name: 'Engine with NAS — Nuwan A. Sanjeewa',
+  alternateName: ['NAS ET Class', 'Engine NAS', 'Nuwan A Sanjiwa'],
+  description:
+    'A/L Engineering Technology class by Nuwan A. Sanjeewa. Best ET class in Kegalle district, Sri Lanka with district rank #1 results.',
+  url: 'https://your-domain.vercel.app',
+  founder: {
+    '@type': 'Person',
+    name: 'Nuwan A. Sanjeewa',
+    alternateName: 'NAS',
+    jobTitle: 'A/L Engineering Technology Teacher',
+    address: {
+      '@type': 'PostalAddress',
+      addressRegion: 'Kegalle',
+      addressCountry: 'LK',
+    },
+  },
+  address: {
+    '@type': 'PostalAddress',
+    addressRegion: 'Kegalle',
+    addressCountry: 'LK',
+  },
+  areaServed: 'Sri Lanka',
+  knowsAbout: [
+    'Engineering Technology',
+    'A/L Engineering Technology Sri Lanka',
+    'Kegalle ET Class',
+  ],
+}
 
 export default function LandingPage() {
   return (
-    <div className={`min-h-screen ${notoSansSinhala.variable} ${notoSerifSinhala.variable} font-noto-sans bg-white text-black`}>
-      
-      {/* --- 1. Header (Navbar Component) --- */}
-        <Navbar />
+    <div className="min-h-screen bg-white text-[#020617] font-[var(--font-geist-sans)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
-      {/* --- 2. Hero Section --- */}
-      <main className="max-w-[1400px] mx-auto px-6 pt-32 pb-24 flex flex-col items-center text-center">
-        {/* Top Tagline */}
-        <div className="inline-flex items-center gap-2 bg-[#f4f4f5] border border-[#e4e4e7] px-4 py-1.5 rounded-full text-sm font-medium text-gray-700 shadow-inner mb-6">
-          ✨ ඉංජිනේරු විද්‍යාවේ සන්නායකතාවය
+      {/* ── NAVBAR ── */}
+      <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl border border-slate-200 flex items-center justify-center shrink-0">
+              <Activity className="h-4 w-4" />
+            </div>
+            <span className="font-black text-sm tracking-tight">Engine with NAS</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/login"
+              className="h-9 px-4 rounded-full text-sm font-medium border border-slate-200 hover:border-slate-300 transition-colors hidden sm:inline-flex items-center"
+            >
+              ලොග් වන්න
+            </Link>
+            <Link
+              href="/register"
+              className="h-9 px-4 rounded-full text-sm font-medium bg-[#020617] text-white hover:bg-slate-800 transition-colors inline-flex items-center"
+            >
+              ලියාපදිංචිය
+            </Link>
+          </div>
         </div>
+      </nav>
 
-        {/* Name Heading */}
-        <h1 className="text-[72px] leading-tight font-black tracking-tighter text-gray-950 mb-10">
-          Nuwan A. Sanjeewa
-        </h1>
+      {/* ── HERO ── */}
+      <section className="px-4 sm:px-6 pt-16 sm:pt-28 pb-14 sm:pb-24 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-1.5 rounded-full text-xs font-medium text-slate-600 mb-6 sm:mb-8">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live Analytics · Real-time Marks
+          </div>
 
-        {/* Quote in Noto Serif Sinhala with specific background */}
-        <div className="bg-[#f8f8f8] border border-gray-100 rounded-3xl p-10 max-w-[800px] shadow-lg mb-10">
-          <p className="font-noto-serif text-3xl font-medium leading-normal text-gray-800 italic">
-            &quot;කොයි විදිහට කැම්පස් ගියත්, යන විදිහට එන්න වෙන පන්තිය!&quot;
+          <h1 className="text-4xl sm:text-7xl md:text-8xl font-black tracking-tight leading-[1.05] mb-4 sm:mb-6">
+            Nuwan A. Sanjeewa
+          </h1>
+
+          <div className="max-w-2xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-10">
+            <p
+              className="text-lg sm:text-2xl font-medium leading-relaxed text-slate-700 italic"
+              style={{ fontFamily: 'var(--font-sinhala), sans-serif' }}
+            >
+              &quot;කොයි විදිහට කැම්පස් ගියත්, යන විදිහට එන්න වෙන පන්තිය!&quot;
+            </p>
+          </div>
+
+          <p className="max-w-lg mx-auto text-sm sm:text-base text-slate-500 leading-relaxed mb-8 sm:mb-12">
+            The official evaluation system for A/L Engineering Technology students —
+            track paper marks, monitor progress, and compete on the leaderboard in real time.
           </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/dashboard"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 px-7 rounded-full bg-[#020617] text-white text-sm font-bold hover:bg-slate-800 transition-colors"
+            >
+              Student Dashboard <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/teacher"
+              className="w-full sm:w-auto inline-flex items-center justify-center h-11 px-7 rounded-full border border-slate-200 text-sm font-medium hover:border-slate-300 transition-colors"
+              style={{ fontFamily: 'var(--font-sinhala), sans-serif' }}
+            >
+              ගුරු පැනලය
+            </Link>
+          </div>
         </div>
+      </section>
 
-        {/* Subtitle text */}
-        <p className="max-w-[650px] text-lg text-gray-600 font-light mb-12">
-          The official evaluation system for A/L Engineering Technology students — track paper marks, monitor progress, and compete on the leaderboard in real time.
-        </p>
-
-        {/* Call to Action Buttons */}
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="bg-black text-white px-8 py-3.5 rounded-full font-semibold shadow-sm hover:bg-black/90 transition text-sm">
-            Student Dashboard
-          </Link>
-          <Link href="/teacher" className="bg-white text-black px-8 py-3.5 rounded-full font-semibold border border-gray-200 hover:bg-gray-50 transition text-sm">
-            ගුරු පැනලය
-          </Link>
+      {/* ── STATS BAND ── */}
+      <section className="border-b border-slate-100 px-4 sm:px-6 py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto grid grid-cols-3 gap-4 sm:gap-8 text-center">
+          {[
+            { value: '100', label: 'Total Marks', unit: '/100' },
+            { value: '3', label: 'Sections', unit: 'components' },
+            { value: '#1', label: 'District Rank', unit: 'ET stream' },
+          ].map((s) => (
+            <div key={s.label}>
+              <p className="text-3xl sm:text-5xl font-black text-[#020617] leading-none">
+                {s.value}
+                <span className="text-xs sm:text-sm font-medium text-slate-400 ml-1">{s.unit}</span>
+              </p>
+              <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-widest font-medium mt-1.5">
+                {s.label}
+              </p>
+            </div>
+          ))}
         </div>
-      </main>
+      </section>
 
-      {/* --- 3. Districts Ranks Section (Dark Background) --- */}
-      <section className="bg-[#0a0a0a] text-white py-24">
-        <div className="max-w-[1400px] mx-auto px-6 flex flex-col items-center text-center">
-          <h2 className="text-5xl font-bold font-noto-sans leading-tight text-white mb-6">
+      {/* ── MARKING SCHEME ── */}
+      <section className="px-4 sm:px-6 py-12 sm:py-20 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8 sm:mb-14">
+            <p className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-slate-400 mb-2 sm:mb-4">
+              Marking Scheme
+            </p>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
+              How your marks are calculated
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl mx-auto">
+            {[
+              {
+                label: 'Paper I — MCQ',
+                desc: '50 questions × 0.7 marks each, scaled to /35',
+                score: '35',
+                icon: <BookOpen className="h-5 w-5" />,
+              },
+              {
+                label: 'Paper II — Theory',
+                desc: '4 Structured (/300) + 4 Essay (/400) questions, scaled to /35',
+                score: '35',
+                icon: <BarChart3 className="h-5 w-5" />,
+              },
+              {
+                label: 'Practical Exam',
+                desc: 'Lab-based assessment contributing directly to final grade',
+                score: '30',
+                icon: <Activity className="h-5 w-5" />,
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="border border-slate-200 rounded-2xl sm:rounded-3xl p-5 sm:p-7 flex flex-col gap-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="h-10 w-10 rounded-2xl border border-slate-200 flex items-center justify-center shrink-0 text-slate-600">
+                    {item.icon}
+                  </div>
+                  <div className="h-10 w-10 rounded-2xl bg-[#020617] text-white flex flex-col items-center justify-center shrink-0">
+                    <span className="text-sm font-black leading-none">{item.score}</span>
+                    <span className="text-[9px] opacity-60">/100</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="font-black text-sm text-[#020617]">{item.label}</p>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 text-center">
+            <div className="inline-flex flex-wrap items-center justify-center gap-1.5 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3">
+              <span className="font-semibold text-[#020617]">Paper I</span>
+              <span className="text-slate-300">/35</span>
+              <span className="text-slate-400">+</span>
+              <span className="font-semibold text-[#020617]">Paper II</span>
+              <span className="text-slate-300">/35</span>
+              <span className="text-slate-400">+</span>
+              <span className="font-semibold text-[#020617]">Practical</span>
+              <span className="text-slate-300">/30</span>
+              <span className="text-slate-400">=</span>
+              <span className="font-black text-[#020617] text-sm">100</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section className="px-4 sm:px-6 py-12 sm:py-20 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8 sm:mb-14">
+            <p className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-slate-400 mb-2 sm:mb-4">
+              Platform features
+            </p>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight"
+              style={{ fontFamily: 'var(--font-sinhala), sans-serif' }}
+            >
+              පද්ධතියේ ඇති ප්‍රධාන පහසුකම්
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {[
+              {
+                icon: <TrendingUp className="h-5 w-5" />,
+                title: 'Realtime Analytics',
+                desc: 'Track every paper, every mark, every trendline as results are released live via Supabase.',
+              },
+              {
+                icon: <Trophy className="h-5 w-5" />,
+                title: 'Leaderboard & Progress',
+                desc: 'See where you stand among peers and watch your ranking change across the year.',
+              },
+              {
+                icon: <ShieldCheck className="h-5 w-5" />,
+                title: 'Secure Student Profiles',
+                desc: 'Private dashboards protected by Auth — your data stays yours, always.',
+              },
+              {
+                icon: <BarChart3 className="h-5 w-5" />,
+                title: 'Section Breakdown',
+                desc: 'MCQ, Structured, Essay, and Practical — every section tracked separately with percentage insights.',
+              },
+              {
+                icon: <Users className="h-5 w-5" />,
+                title: 'Class Rank',
+                desc: 'Automatic ranking among all active students based on cumulative average score.',
+              },
+              {
+                icon: <Activity className="h-5 w-5" />,
+                title: 'AI Study Assistant',
+                desc: 'AI-powered insights based on your personal marks data — get study tips and score analysis.',
+              },
+            ].map((f) => (
+              <div key={f.title} className="border border-slate-200 rounded-2xl sm:rounded-3xl p-5 sm:p-7 flex flex-col gap-3">
+                <div className="h-9 w-9 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-600 shrink-0">
+                  {f.icon}
+                </div>
+                <div>
+                  <p className="font-black text-sm text-[#020617]">{f.title}</p>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">{f.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── DISTRICT RANKS ── */}
+      <section className="bg-[#020617] text-white px-4 sm:px-6 py-16 sm:py-24">
+        <div className="max-w-7xl mx-auto text-center">
+          <p className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-slate-400 mb-3 sm:mb-5">
+            Track record
+          </p>
+          <h2
+            className="text-3xl sm:text-5xl font-black tracking-tight mb-4"
+            style={{ fontFamily: 'var(--font-sinhala), sans-serif' }}
+          >
             විශිෂ්ටත්වයේ සැබෑ සාක්ෂිය
           </h2>
-          <p className="max-w-[600px] text-lg text-gray-400 font-light mb-20">
-            Proven excellence — students from this class have consistently ranked among the very best in the district.
+          <p className="max-w-md mx-auto text-sm text-slate-400 mb-12 sm:mb-16 leading-relaxed">
+            Proven excellence — students from this class have consistently ranked among the very best
+            in the district for Engineering Technology.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-[1100px]">
-            {[ { rank: '01', title: 'Realtime Analytics', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
-               { rank: '02', title: 'Leaderboard & Progress', icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' },
-               { rank: '03', title: 'Secure Student Profiles', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' }
-            ].map((item, index) => (
-              <div key={index} className="bg-[#141414] border border-[#1f1f1f] rounded-2xl p-8 flex flex-col items-center text-center shadow-inner">
-                <div className="bg-[#1c1c1c] p-4 rounded-xl border border-[#262626] shadow-inner mb-6">
-                  <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                  </svg>
-                </div>
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">DISTRICT RANK</p>
-                <p className="text-[120px] font-black tracking-tighter text-white leading-none mb-4">{item.rank}</p>
-                <p className="text-sm font-semibold text-gray-600">Engineering Technology</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-3xl mx-auto">
+            {[
+              { rank: '01', year: '2024 A/L' },
+              { rank: '02', year: '2023 A/L' },
+              { rank: '03', year: '2022 A/L' },
+            ].map((item) => (
+              <div
+                key={item.rank}
+                className="border border-slate-800 rounded-2xl sm:rounded-3xl p-6 sm:p-10 flex flex-col items-center"
+              >
+                <p className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-slate-500 mb-2">
+                  District Rank
+                </p>
+                <p className="text-7xl sm:text-9xl font-black leading-none text-white">{item.rank}</p>
+                <p className="text-xs text-slate-500 mt-3 font-medium">{item.year} · Engineering Technology</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* --- 4. Features Section (Light Background) --- */}
-      <section className="bg-white py-24">
-        <div className="max-w-[1400px] mx-auto px-6 flex flex-col items-center text-center">
-          <h2 className="text-5xl font-bold font-noto-sans leading-tight text-gray-950 mb-6">
-            පද්ධතියේ ඇති ප්‍රධාන පහසුකම්
+      {/* ── CTA ── */}
+      <section className="px-4 sm:px-6 py-16 sm:py-24 border-b border-slate-100">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-5xl font-black tracking-tight mb-4">
+            Ready to track your progress?
           </h2>
-          <p className="max-w-[600px] text-lg text-gray-600 font-light mb-20">
-            A focused toolkit built for serious students — clean, fast, and distraction-free.
+          <p className="text-sm sm:text-base text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
+            Register with your student ID and Book ID to access your personalized dashboard.
           </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-[1100px]">
-            {[ { title: 'Realtime Analytics', desc: 'Track every paper, every mark, every trendline as results are released.' },
-               { title: 'Leaderboard & Progress', desc: 'See where you stand among peers and watch your growth across the year.' },
-               { title: 'Secure Student Profiles', desc: 'Private, protected dashboards — your data stays yours, always.' }
-            ].map((item, index) => (
-              <div key={index} className="bg-white border border-gray-100 rounded-2xl p-8 flex flex-col items-start text-left shadow-sm">
-                <p className="text-xl font-bold tracking-tight text-gray-900 mb-2">{item.title}</p>
-                <p className="text-sm text-gray-600 leading-relaxed font-light">{item.desc}</p>
-              </div>
-            ))}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/register"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-8 rounded-full bg-[#020617] text-white text-sm font-bold hover:bg-slate-800 transition-colors"
+              style={{ fontFamily: 'var(--font-sinhala), sans-serif' }}
+            >
+              ලියාපදිංචි වන්න <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/login"
+              className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-8 rounded-full border border-slate-200 text-sm font-medium hover:border-slate-300 transition-colors"
+              style={{ fontFamily: 'var(--font-sinhala), sans-serif' }}
+            >
+              දැනටමත් ගිණුමක් තිබේද? ලොග් වන්න
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* --- 5. Footer --- */}
-      <footer className="border-t border-gray-100 bg-white py-10">
-        <div className="max-w-[1400px] mx-auto px-6 text-center">
-          <p className="text-xs text-gray-600 font-light">
-            © 2026 Engine with NAS. Powered by Engineering Technology Stream.
-          </p>
-          <p className="text-xs text-gray-400 font-light mt-1">
-            Designed & Developed for Nuwan A. Sanjeewa (ET Sir).
-          </p>
-        </div>
+      {/* ── FOOTER ── */}
+      <footer className="border-t border-slate-100 py-8 px-6 text-center">
+        <p className="text-xs text-slate-400">
+          © 2026 Engine with NAS. Powered by Engineering Technology Stream.
+        </p>
+        <p className="text-xs text-slate-300 mt-1">
+          Designed & Developed for Nuwan A. Sanjeewa (ET Sir).
+        </p>
       </footer>
 
     </div>
