@@ -444,6 +444,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                         <thead className="bg-amber-100/40 text-xs font-bold uppercase text-amber-900 border-b">
                           <tr>
                             <th className="px-6 py-3">Student Name</th>
+                            <th className="px-6 py-3">Student ID</th>
                             <th className="px-6 py-3">Book ID</th>
                             <th className="px-6 py-3 text-right">Action</th>
                           </tr>
@@ -453,6 +454,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                             <tr key={s.id}>
                               <td className="px-6 py-4 font-bold text-slate-900">{s.name}</td>
                               <td className="px-6 py-4 font-mono text-xs font-bold">{s.student_id}</td>
+                              <td className="px-6 py-4 font-mono text-xs font-bold">{s.book_id}</td>
                               <td className="px-6 py-4 text-right">
                                 <Button size="sm" onClick={() => handleApprove(s)} disabled={approvingId === s.id} className="bg-[#020617] text-white rounded-xl text-xs h-9">
                                   {approvingId === s.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : 'Approve'}
