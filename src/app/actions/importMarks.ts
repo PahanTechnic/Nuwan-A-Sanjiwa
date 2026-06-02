@@ -14,6 +14,7 @@ interface MarkRow {
   ess_q2: string
   ess_q3: string
   ess_q4: string
+  practical_score: string  // ✅ ADD THIS
 }
 
 export async function importMarks(marksList: MarkRow[]) {
@@ -23,7 +24,6 @@ export async function importMarks(marksList: MarkRow[]) {
     let successCount = 0
     let errorCount = 0
 
-    // Cache for papers
     const paperCache: { [key: string]: string } = {}
 
     for (const row of marksList) {
@@ -39,9 +39,6 @@ export async function importMarks(marksList: MarkRow[]) {
 
         let paperId = paperCache[pName]
 
-        // =========================
-        // FIND / CREATE PAPER
-        // =========================
         if (!paperId) {
           const { data: existingPaper, error: existingPaperError } =
             await supabaseAdmin
@@ -62,17 +59,12 @@ export async function importMarks(marksList: MarkRow[]) {
             const { data: newPaper, error: newPaperError } =
               await supabaseAdmin
                 .from('papers')
-                .insert({
-                  paper_name: pName,
-                })
+                .insert({ paper_name: pName })
                 .select('id')
                 .single()
 
             if (newPaperError || !newPaper) {
-              console.error(
-                'Paper Create Error:',
-                newPaperError?.message
-              )
+              console.error('Paper Create Error:', newPaperError?.message)
               errorCount++
               continue
             }
@@ -83,9 +75,6 @@ export async function importMarks(marksList: MarkRow[]) {
           paperCache[pName] = paperId
         }
 
-        // =========================
-        // FIND STUDENT
-        // =========================
         const { data: studentData, error: studentError } =
           await supabaseAdmin
             .from('students')
@@ -98,64 +87,42 @@ export async function importMarks(marksList: MarkRow[]) {
             `Student not found: ${row.student_id}`,
             studentError?.message
           )
-
           errorCount++
           continue
         }
 
-        // =========================
-        // CONVERT MARKS
-        // =========================
-        const mcq = parseFloat(row.mcq_score || '0') || 0
+        const mcq        = parseFloat(row.mcq_score      || '0') || 0
+        const sq1        = parseFloat(row.seq_q1         || '0') || 0
+        const sq2        = parseFloat(row.seq_q2         || '0') || 0
+        const sq3        = parseFloat(row.seq_q3         || '0') || 0
+        const sq4        = parseFloat(row.seq_q4         || '0') || 0
+        const es1        = parseFloat(row.ess_q1         || '0') || 0
+        const es2        = parseFloat(row.ess_q2         || '0') || 0
+        const es3        = parseFloat(row.ess_q3         || '0') || 0
+        const es4        = parseFloat(row.ess_q4         || '0') || 0
+        const practical  = parseFloat(row.practical_score || '0') || 0  // ✅ ADD THIS
 
-        const sq1 = parseFloat(row.seq_q1 || '0') || 0
-        const sq2 = parseFloat(row.seq_q2 || '0') || 0
-        const sq3 = parseFloat(row.seq_q3 || '0') || 0
-        const sq4 = parseFloat(row.seq_q4 || '0') || 0
+        const total = mcq + sq1 + sq2 + sq3 + sq4 + es1 + es2 + es3 + es4 + practical  // ✅ ADD practical
 
-        const es1 = parseFloat(row.ess_q1 || '0') || 0
-        const es2 = parseFloat(row.ess_q2 || '0') || 0
-        const es3 = parseFloat(row.ess_q3 || '0') || 0
-        const es4 = parseFloat(row.ess_q4 || '0') || 0
-
-        const total =
-          mcq +
-          sq1 +
-          sq2 +
-          sq3 +
-          sq4 +
-          es1 +
-          es2 +
-          es3 +
-          es4
-
-        // =========================
-        // UPSERT MARKS
-        // =========================
         const { error: marksError } = await supabaseAdmin
           .from('marks')
           .upsert(
             {
-              student_id: studentData.id,
-              paper_id: paperId,
-
-              mcq_score: mcq,
-
-              seq_q1: sq1,
-              seq_q2: sq2,
-              seq_q3: sq3,
-              seq_q4: sq4,
-
-              ess_q1: es1,
-              ess_q2: es2,
-              ess_q3: es3,
-              ess_q4: es4,
-
-              total_marks: total,
+              student_id:      studentData.id,
+              paper_id:        paperId,
+              mcq_score:       mcq,
+              seq_q1:          sq1,
+              seq_q2:          sq2,
+              seq_q3:          sq3,
+              seq_q4:          sq4,
+              ess_q1:          es1,
+              ess_q2:          es2,
+              ess_q3:          es3,
+              ess_q4:          es4,
+              practical_score: practical,  // ✅ ADD THIS
+              total_marks:     total,
             },
-            {
-              onConflict: 'student_id,paper_id',
-            }
+            { onConflict: 'student_id,paper_id' }
           )
 
         if (marksError) {
@@ -163,7 +130,6 @@ export async function importMarks(marksList: MarkRow[]) {
             `Error inserting marks for ${row.student_id}:`,
             marksError.message
           )
-
           errorCount++
         } else {
           successCount++
@@ -174,22 +140,14 @@ export async function importMarks(marksList: MarkRow[]) {
       }
     }
 
-    return {
-      success: true,
-      successCount,
-      errorCount,
-    }
+    return { success: true, successCount, errorCount }
   } catch (mainError) {
     console.error('MAIN IMPORT ERROR:', mainError)
-
     return {
       success: false,
       successCount: 0,
       errorCount: 0,
-      error:
-        mainError instanceof Error
-          ? mainError.message
-          : 'Unknown error',
+      error: mainError instanceof Error ? mainError.message : 'Unknown error',
     }
   }
 }
