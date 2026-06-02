@@ -156,7 +156,6 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
       submissions: paperMap[name].count
     }))
 
-    // Default placeholder data if database is empty
     if (data.length === 0) {
       return [
         { name: 'Paper 01', avg: 74, submissions: 12 },
@@ -199,6 +198,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
     document.body.removeChild(link)
   }
 
+  // ✅ FIX: transformHeader lowercase කරනවා — Student_id vs student_id issue fix
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -209,11 +209,16 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (header) => header.toLowerCase().trim(), // ✅ FIX
       complete: async (result) => {
         try {
           if (importType === 'marks') {
             const res = await importMarks(result.data as any)
-            setImportStatus(res.success ? `✅ Marks imported successfully!` : `❌ Import failed.`)
+            setImportStatus(
+              res.success
+                ? `✅ Import සාර්ථකයි! ${res.successCount} rows imported${res.errorCount > 0 ? `, ${res.errorCount} errors` : ''}.`
+                : `❌ Import failed. ${res.error || ''}`
+            )
           } else {
             const res = await importStudents(result.data as any)
             setImportStatus(`✅ Students imported successfully!`)
@@ -358,7 +363,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                 ))}
               </div>
 
-              {/* ULTRA-MODERN MINIMALIST ANALYTICS CHART */}
+              {/* ANALYTICS CHART */}
               <Card className="rounded-2xl sm:rounded-3xl border-slate-200 shadow-none overflow-hidden">
                 <CardHeader className="border-b border-slate-100 pb-5">
                   <div className="flex items-center gap-2">
@@ -372,11 +377,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                   </div>
                 </CardHeader>
                 <CardContent className="pt-8 px-4 sm:px-8 pb-6">
-                  
-                  {/* Chart Visualizer */}
                   <div className="relative h-64 w-full flex flex-col justify-between">
-                    
-                    {/* Background Grid Lines */}
                     <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
                       {[100, 75, 50, 25, 0].map((line) => (
                         <div key={line} className="w-full flex items-center gap-4">
@@ -385,8 +386,6 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                         </div>
                       ))}
                     </div>
-
-                    {/* Bars Grid Section */}
                     <div className="relative z-10 flex-1 ml-12 flex items-end justify-around h-full pt-2 pb-1">
                       {chartData.map((item, idx) => (
                         <div 
@@ -395,7 +394,6 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                           onMouseEnter={() => setHoveredBar(item.name)}
                           onMouseLeave={() => setHoveredBar(null)}
                         >
-                          {/* Live Dynamic Floating Tooltip */}
                           <div className={cn(
                             "absolute -top-10 z-20 bg-[#020617] text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl shadow-xl transition-all duration-200 pointer-events-none flex flex-col items-center gap-0.5 whitespace-nowrap",
                             hoveredBar === item.name ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-2 scale-95"
@@ -404,8 +402,6 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                             <span className="text-[8px] text-slate-400 font-normal">{item.submissions} Papers Logged</span>
                             <div className="w-1.5 h-1.5 bg-[#020617] rotate-45 absolute -bottom-0.5 left-1/2 -translate-x-1/2" />
                           </div>
-
-                          {/* Interactive Column Bar */}
                           <div 
                             className={cn(
                               "w-full rounded-t-xl transition-all duration-500 ease-out relative overflow-hidden cursor-pointer",
@@ -413,15 +409,12 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                             )}
                             style={{ height: `${item.avg}%` }}
                           >
-                            {/* Modern Highlight Strip Line */}
                             <div className="absolute inset-x-0 top-0 h-1 bg-white/20" />
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
-
-                  {/* Chart X-Axis Labels */}
                   <div className="ml-12 mt-3 flex justify-around border-t border-slate-100 pt-3 text-center">
                     {chartData.map((item, idx) => (
                       <div key={idx} className="w-full max-w-[60px] sm:max-w-[80px] px-1 truncate">
@@ -430,7 +423,6 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                       </div>
                     ))}
                   </div>
-
                 </CardContent>
               </Card>
             </div>
@@ -576,7 +568,14 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                     {importing ? 'Processing Matrix…' : 'Choose CSV Stream'}
                     <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} disabled={importing} />
                   </label>
-                  {importStatus && <div className="mt-3 text-xs font-bold px-3 py-1.5 rounded-lg inline-block">{importStatus}</div>}
+                  {importStatus && (
+                    <div className={cn(
+                      "mt-3 text-xs font-bold px-3 py-2 rounded-xl inline-block",
+                      importStatus.startsWith('✅') ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                    )}>
+                      {importStatus}
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>
@@ -584,7 +583,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
         </div>
       </section>
 
-      {/* ── MOBILE NAVIGATION (Liquid Glass) ── */}
+      {/* ── MOBILE NAVIGATION ── */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="relative w-full max-w-md">
           <div className="pointer-events-none absolute inset-x-0 -top-7 z-10 flex justify-center">
