@@ -485,6 +485,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                       <thead className="bg-slate-50 text-xs tracking-widest text-slate-400 border-b">
                         <tr>
                           <th className="px-6 py-3.5">Student Details</th>
+                            <th className="px-6 py-3">Student ID</th>
                           <th className="px-6 py-3.5">Book ID</th>
                           <th className="px-6 py-3.5">Class</th>
                         </tr>
@@ -494,6 +495,7 @@ export default function TeacherDashboardUI({ teacherName, initialStudents = [], 
                           <tr key={s.id} className="hover:bg-slate-50/80">
                             <td className="px-6 py-4 font-bold text-[#020617]">{s.name}</td>
                             <td className="px-6 py-4 font-mono text-xs text-slate-500">{s.student_id}</td>
+                              <td className="px-6 py-4 font-mono text-xs font-bold">{s.book_id}</td>
                             <td className="px-6 py-4 text-slate-600">{s.class_name}</td>
                           </tr>
                         ))}
