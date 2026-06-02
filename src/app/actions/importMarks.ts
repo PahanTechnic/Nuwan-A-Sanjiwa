@@ -14,7 +14,7 @@ interface MarkRow {
   ess_q2: string
   ess_q3: string
   ess_q4: string
-  practical_score: string  // ✅ ADD THIS
+  practical_score: string // ✅ ADD
 }
 
 export async function importMarks(marksList: MarkRow[]) {
@@ -28,17 +28,23 @@ export async function importMarks(marksList: MarkRow[]) {
 
     for (const row of marksList) {
       try {
-        console.log('Importing:', row.student_id)
+        // ✅ FIX: transformHeader lowercase කළාට පස්සේ student_id හරිම එනවා
+        const studentId = (row.student_id || '').trim()
+        const pName = (row.paper_name || '').trim()
 
-        const pName = row.paper_name?.trim()
+        console.log('Importing:', studentId, '| Paper:', pName)
 
-        if (!pName) {
+        if (!studentId || !pName) {
+          console.warn('Skipping row — missing student_id or paper_name:', row)
           errorCount++
           continue
         }
 
         let paperId = paperCache[pName]
 
+        // =========================
+        // FIND / CREATE PAPER
+        // =========================
         if (!paperId) {
           const { data: existingPaper, error: existingPaperError } =
             await supabaseAdmin
@@ -75,35 +81,44 @@ export async function importMarks(marksList: MarkRow[]) {
           paperCache[pName] = paperId
         }
 
+        // =========================
+        // FIND STUDENT
+        // =========================
         const { data: studentData, error: studentError } =
           await supabaseAdmin
             .from('students')
             .select('id')
-            .eq('student_id', row.student_id?.trim())
+            .eq('student_id', studentId)
             .maybeSingle()
 
         if (studentError || !studentData) {
           console.error(
-            `Student not found: ${row.student_id}`,
+            `Student not found: ${studentId}`,
             studentError?.message
           )
           errorCount++
           continue
         }
 
-        const mcq        = parseFloat(row.mcq_score      || '0') || 0
-        const sq1        = parseFloat(row.seq_q1         || '0') || 0
-        const sq2        = parseFloat(row.seq_q2         || '0') || 0
-        const sq3        = parseFloat(row.seq_q3         || '0') || 0
-        const sq4        = parseFloat(row.seq_q4         || '0') || 0
-        const es1        = parseFloat(row.ess_q1         || '0') || 0
-        const es2        = parseFloat(row.ess_q2         || '0') || 0
-        const es3        = parseFloat(row.ess_q3         || '0') || 0
-        const es4        = parseFloat(row.ess_q4         || '0') || 0
-        const practical  = parseFloat(row.practical_score || '0') || 0  // ✅ ADD THIS
+        // =========================
+        // CONVERT MARKS
+        // =========================
+        const mcq       = parseFloat(row.mcq_score       || '0') || 0
+        const sq1       = parseFloat(row.seq_q1          || '0') || 0
+        const sq2       = parseFloat(row.seq_q2          || '0') || 0
+        const sq3       = parseFloat(row.seq_q3          || '0') || 0
+        const sq4       = parseFloat(row.seq_q4          || '0') || 0
+        const es1       = parseFloat(row.ess_q1          || '0') || 0
+        const es2       = parseFloat(row.ess_q2          || '0') || 0
+        const es3       = parseFloat(row.ess_q3          || '0') || 0
+        const es4       = parseFloat(row.ess_q4          || '0') || 0
+        const practical = parseFloat(row.practical_score || '0') || 0 // ✅ ADD
 
-        const total = mcq + sq1 + sq2 + sq3 + sq4 + es1 + es2 + es3 + es4 + practical  // ✅ ADD practical
+        const total = mcq + sq1 + sq2 + sq3 + sq4 + es1 + es2 + es3 + es4 + practical // ✅ ADD practical
 
+        // =========================
+        // UPSERT MARKS
+        // =========================
         const { error: marksError } = await supabaseAdmin
           .from('marks')
           .upsert(
@@ -119,7 +134,7 @@ export async function importMarks(marksList: MarkRow[]) {
               ess_q2:          es2,
               ess_q3:          es3,
               ess_q4:          es4,
-              practical_score: practical,  // ✅ ADD THIS
+              practical_score: practical, // ✅ ADD
               total_marks:     total,
             },
             { onConflict: 'student_id,paper_id' }
@@ -127,7 +142,7 @@ export async function importMarks(marksList: MarkRow[]) {
 
         if (marksError) {
           console.error(
-            `Error inserting marks for ${row.student_id}:`,
+            `Error inserting marks for ${studentId}:`,
             marksError.message
           )
           errorCount++
