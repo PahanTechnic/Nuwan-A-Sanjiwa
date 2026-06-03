@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import  Roboto_Mono, Noto_Sans_Sinhala } from 'next/font/google'
+import { Roboto_Mono, Noto_Sans_Sinhala } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
 // Component එකේ නම FloatingWidget විදිහට update කරා (උඹේ file name එක PWAInstallButton නම් import path එක වෙනස් කරන්න එපා)
