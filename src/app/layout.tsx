@@ -1,12 +1,17 @@
 import type { Metadata } from 'next'
-import { Roboto_Mono, Noto_Sans_Sinhala } from 'next/font/google'
+import { Outfit, Noto_Sans_Sinhala } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
 // Component එකේ නම FloatingWidget විදිහට update කරා (උඹේ file name එක PWAInstallButton නම් import path එක වෙනස් කරන්න එපා)
 import PWAInstallFloatingWidget from '@/components/PWAInstallButton'
 
 
-const robotoMono = Roboto_Mono({ variable: '--font-roboto-mono', subsets: ['latin'] })
+const outfit = Outfit({
+  variable: '--font-outfit',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+})
+
 const notoSinhala = Noto_Sans_Sinhala({
   subsets: ['sinhala'],
   weight: ['400', '700', '900'],
@@ -114,7 +119,7 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-capable': 'yes',
     'application-name': 'Engine NAS',
     'theme-color': '#020617',
-'google-site-verification': 'lOqzfMch6FfNxtjo4cf0RDjxRDjNTddsZYnpaJDw0TY',
+    'google-site-verification': 'lOqzfMch6FfNxtjo4cf0RDjxRDjNTddsZYnpaJDw0TY',
   },
 }
 
@@ -124,7 +129,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="si"
       className={cn(
         'h-full antialiased',
-        robotoMono.variable,
+        outfit.variable,
         notoSinhala.variable,
         'font-sans',
       )}

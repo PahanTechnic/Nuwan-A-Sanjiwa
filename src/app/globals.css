@@ -125,7 +125,22 @@
   font-variation-settings: "wdth" 100;
 }
 
+/* English text → Outfit */
+:root {
+  --font-sans: var(--font-outfit);
+}
 
+/* Sinhala Unicode range → Noto Sans Sinhala */
+@font-face-override,
+*:lang(si),
+.sinhala {
+  font-family: var(--font-sinhala), sans-serif;
+}
+
+/* Unicode range එකෙන් automatic switch */
+body {
+  font-family: var(--font-outfit), var(--font-sinhala), sans-serif;
+}
 
 @layer base {
   * {
