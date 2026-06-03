@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import PWAInstallFloatingWidget from '@/components/PWAInstallButton'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
-const robotoMono = Roboto_mono({ variable: '--font-roboto-mono', subsets: ['latin'] })
+const robotoMono = Roboto_Mono({ variable: '--font-roboto-mono', subsets: ['latin'] })
 const notoSinhala = Noto_Sans_Sinhala({
   subsets: ['sinhala'],
   weight: ['400', '700', '900'],
