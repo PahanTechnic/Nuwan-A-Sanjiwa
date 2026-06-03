@@ -281,7 +281,6 @@ function Field({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={onGuide}
         disabled={disabled}
         className="sinhala h-11 rounded-xl border-zinc-200 bg-zinc-50/50 px-3 text-sm focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
       />

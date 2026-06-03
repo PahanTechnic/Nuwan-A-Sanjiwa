@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Noto_Sans_Sinhala } from 'next/font/google'
+import { Geist, Roboto_Mono, Noto_Sans_Sinhala } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
 // Component එකේ නම FloatingWidget විදිහට update කරා (උඹේ file name එක PWAInstallButton නම් import path එක වෙනස් කරන්න එපා)
 import PWAInstallFloatingWidget from '@/components/PWAInstallButton'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
+const robotoMono = Roboto_mono({ variable: '--font-roboto-mono', subsets: ['latin'] })
 const notoSinhala = Noto_Sans_Sinhala({
   subsets: ['sinhala'],
   weight: ['400', '700', '900'],
@@ -125,7 +125,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={cn(
         'h-full antialiased',
         geistSans.variable,
-        geistMono.variable,
+        robotoMono.variable,
         notoSinhala.variable,
         'font-sans',
       )}
